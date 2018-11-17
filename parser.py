@@ -193,11 +193,10 @@ test("3+2^5*2")
 
 
 
-# Ejemplo:
-
+# Sample:
 # test("1+2*3+4/2-1")
 # (Sub (Add (Add (Const 1) (Mul (Const 2) (Const 3))) (Div (Const 4) (Const 2))) (Const 1))
-
+# Python 2.x
 #>>> import compiler 
 #>>> compiler.parse("1+2*3+4/2-1", "eval")
 # Expression(Sub((Add((Add((Const(1), Mul((Const(2), Const(3))))), Div((Const(4), Const(2))))), Const(1))))
