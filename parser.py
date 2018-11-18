@@ -33,29 +33,34 @@ import re
 
 # symbol: constans, operators, ids, keywords
 # symbol_table = {symbol : symbol_class}
-# ej) {Const symbolConstant,
-#       + symbolAdd,
-#       - symbolSub,
-#       * symbolMul,
-#       / symbolDiv,
-#       ^ symbolPower,
-#       % symbolMod,
-#       (end) symbolConstant
+# ej) {Const symbol-Constant,
+#       + symbol_+,
+#       - symbol_-,
+#       * symbol_*,
+#        ...
+#       (end) symbol_end
 #       }
 
 symbol_table = {}
 
-names = {"+":"Add","-":"Sub","*":"Mul","/":"Div",
-        "^":"Power","%":"Mod"}
+names_map = {"+":"Add","-":"Sub","*":"Mul","/":"Div",
+        "**":"Power","%":"Mod","and":"And","or":"Or",
+        "|":"Bitor","&":"Bitand","^":"Bitxor",
+        "<<":"LeftShift",">>":"RightSift","lambda":"Lambda",
+        "if":"IfExp","<":"Compare",">":"Compare",
+        "<=":"Compare",">=":"Compare","==":"Compare","!=":"Compare",
+        "<>":"Compare"}
 
 
 def symbol(id, bp=0):
 
     """Crea una clase para el token dado su id y bp, solo si es necesario,
-     si ya existe una clase no se hace nada.
+    si ya existe una clase no se hace nada.
+    
     Parámetros:
     id -- identificador, simbolo
     bp -- binding power
+    
     Return:
     Clase_base -- Clase de ese símbolo. Clase_base es una proto-clase, un modelo.
             Por ejemplo si el token es "+" base será la clase del token +
@@ -71,41 +76,50 @@ def symbol(id, bp=0):
 
             def __init__ (self):
                 self.value = None
+                self.first = self.second = self.third = None
                 self.id = id
+                try : self.name = names_map[self.id]
+                except KeyError: self.name= self.id
 
             def led (self,left):
                 self.first = left
-                if self.id in ["^","%"]:
+                if self.id in ["^","or","and"]:
                     self.second = parse(bp-1)
                 else:
                     self.second = parse(bp)
                 return self
 
             def __repr__(self):
-                if self.value:
-                    if self.value.isnumeric():
-                        return "(Const %s)" % self.value
-                    else: return "(Name %s)" % self.value
-
-                else:
-                    return "(%s %s, %s)" % (names[self.id], self.first, self.second)
-        
-        try:
-            Clase_base.__name__ = "symbol" + names[id]
-        except KeyError:
-            Clase_base.__name__ = "symbolConstant"
-
+                if self.id == "Name" or self.id == "Const":
+                    return "(%s %s)" % (self.id, self.value)
+                out = [self.name, self.first, self.second, self.third]
+                out = map(str, filter(None, out))
+                return "(" + " ".join(out) + ")"
+   
+        Clase_base.__name__ = "symbol-" + id
         Clase_base.lbp = bp
         symbol_table[id] = Clase_base
 
     return Clase_base
 
 
+# Ver https://docs.python.org/3/reference/expressions.html | 6.16. Operator precedence
+
 symbol("Const"); symbol("Name")
-symbol("+", 10); symbol("-", 10)
-symbol("*", 20); symbol("/", 20)
-symbol("^", 30); symbol("%",30)
+symbol("+", 110); symbol("-", 110)
+symbol("*", 120); symbol("/", 120)
+symbol("**", 140); symbol("%",120)
 symbol("(end)")
+
+symbol("[", 150); symbol("(", 150)
+symbol("lambda", 20); symbol("if", 20)
+
+symbol("or",30);symbol("and",40)
+symbol("|", 70); symbol("^", 80); symbol("&", 90)
+symbol("<<", 100); symbol(">>", 100)
+symbol("<", 60); symbol("<=", 60)
+symbol(">", 60); symbol(">=", 60)
+symbol("<>", 60); symbol("!=", 60); symbol("==", 60)
 
 
 # nud method -> constants, + , -
@@ -117,12 +131,16 @@ def prefix(id, bp):
     def nud(self):
         self.first = parse(bp)
         self.second = None
+        aux = {"+":"UnaryAdd", "-":"UnarySub","not":"Not"}
+        self.name = aux[self.id]
         return self
     symbol(id).nud = nud
 
-prefix("+", 100); prefix("-", 100)
+prefix("+", 130); prefix("-", 130); prefix("not", 50)
+
 symbol("Const").nud = lambda self: self
 symbol("Name").nud = lambda self: self
+
 
 
 
@@ -229,11 +247,20 @@ test("1*2+3")
 test("2/4+1*3")
 test("5+2*3+4/2-1")
 test ("10%2*10%4+7")
-test("3+2^5*2")
+test("3+2**5*2")
 test ("x+1")
 test("a+b*c")
 test("'hello'+'world'")
-
+print ("\nNew\n")
+test("not 1")
+test("not 3+4")
+test("not a+3*b")
+test("a and b")
+test("1 or 2")
+test("not a and b or c**4 ")
+test("a << b")
+test("1 >> 6")
+test("x != y")
 
 # Check:
 # test("1+2*3+4/2-1")
@@ -243,4 +270,3 @@ test("'hello'+'world'")
 #>>> import compiler 
 #>>> compiler.parse("1+2*3+4/2-1", "eval")
 # Expression(Sub((Add((Add((Const(1), Mul((Const(2), Const(3))))), Div((Const(4), Const(2))))), Const(1))))
-
