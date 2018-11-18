@@ -41,12 +41,18 @@ class const_token:
     def __repr__(self):
         return "(Const %s)" % self.value
 
-class operator_add:
-    lbp = 10; name = "Add"
+class operator_level1:
+
+    def __init__(self, symbol):
+        self.symbol = symbol
+        self.lbp = 10
+        guide = {"+":"Add","-":"Sub"}
+        self.name = guide[self.symbol]
 
     def nud(self):
         self.izquierda = parse(100)
-        self.name = "UnaryAdd"
+        guide = {"+":"UnaryAdd","-":"UnarySub"}
+        self.name = guide[self.symbol]
         return self
 
     def led(self, left):
@@ -55,68 +61,42 @@ class operator_add:
         return self
 
     def __repr__(self):
-        if (self.name == "UnaryAdd"):
+        if (self.name == "UnaryAdd" or self.name == "UnarySub"):
             return "(%s %s)" % (self.name,self.izquierda)
         else:
             return "(%s %s, %s)" % (self.name,self.izquierda,self.derecha)
 
-class operator_sub:
+class operator_level2:
 
-    lbp = 10; name = "Sub"
-    def nud(self):
-        self.izquierda = parse(100)
-        self.name = "UnarySub"
-        return self
+    def __init__(self, symbol):
+        self.symbol = symbol
+        self.lbp = 20
+        guide = {"*":"Mul","/":"Div"}
+        self.name = guide[self.symbol]
 
-    def led(self, left):
-        self.izquierda = left
-        self.derecha = parse(10)
-        return self
-
-    def __repr__(self):
-        if (self.name == "UnarySub"):
-            return "(%s %s)" % (self.name,self.izquierda)
-        else:
-            return "(%s %s, %s)" % (self.name,self.izquierda,self.derecha)
-
-class operator_mul:
-
-    lbp = 20
     def led(self, left):
         self.izquierda = left
         self.derecha = parse(20)
         return self
 
     def __repr__(self):
-        return "(Mul %s , %s)" % (self.izquierda, self.derecha)
+        return "(%s %s , %s)" % (self.name,self.izquierda, self.derecha)
 
-class operator_div:
-    lbp = 20
-    def led(self, left):
-        self.izquierda = left
-        self.derecha = parse(20)
-        return self
-    def __repr__(self):
-        return "(Div %s , %s)" % (self.izquierda, self.derecha)
 
-class operator_power:
-    lbp = 30
-    def led(self, left):
-        self.izquierda = left
-        self.derecha = parse(30-1)
-        return self
-    def __repr__(self):
-        return "(Power %s , %s)" % (self.izquierda, self.derecha)
+class operator_level3:
 
-class operator_mod:
-    lbp = 30
+    def __init__(self, symbol):
+        self.symbol = symbol
+        self.lbp = 30
+        guide = {"^":"Power","%":"Mod"}
+        self.name = guide[self.symbol]
+
     def led(self, left):
         self.izquierda = left
         self.derecha = parse(30-1)
         return self
     def __repr__(self):
-        return "(Mod %s , %s)" % (self.izquierda, self.derecha)
-
+        return "(%s %s , %s)" % (self.name,self.izquierda, self.derecha)
 
 class end_token:
     lbp = 0
@@ -124,22 +104,17 @@ class end_token:
 
 def tokenize(program):
     regex = r'\w+|[+/*-^<>%(|)]|"<-"|"and"|"or"|"not"|\".\"'
+    # token_pat = re.compile("\s*(?:(\d+)|(\*\*|.))")
 
     for token in re.findall(regex, program):
         if token.isnumeric():
             yield const_token(int(token))
-        elif token == "+":
-            yield operator_add()
-        elif token == "-":
-            yield operator_sub()
-        elif token == "*":
-            yield operator_mul()
-        elif token == "/":
-            yield operator_div()
-        elif token == "^":
-                yield operator_power()
-        elif token == "%":
-                yield operator_mod()
+        elif token in ["+","-"]:
+            yield operator_level1(token)
+        elif token in ["*","/"]:
+            yield operator_level2(token)
+        elif token in ["^","%"]:
+                yield operator_level3(token)
         else:
             raise SyntaxError("unknown token: %r" % token)
     yield end_token()
@@ -151,9 +126,10 @@ def parse(rbp=0):
     Pratt parser implementation.
     See "Top Down Operator Precedence" (section 3: Implementation, pág 47)
 
-    rbp = valor del lado de derecho de la expresion
-    lbp = valor del lado izquierdo de la expresion 
-    ta = token actual
+    rbp = right binding power. value of the expression's right part
+    lbp = left binding power. value of the expression's left part
+    ta = current token
+    left = expression's left side
     """
 
     global token
@@ -178,25 +154,29 @@ def test(program):
     #tokenize(program)
     token = next()
     tree = parse()
-    print (program, "->", tree )
+    print (program, "-> Expression",tree,"\n")
 
 
 test("+1")
+test("-1")
+test("1")
 test("-1+1")
 test("1+2+3")
+test("1+2+3-56")
+
 test("1+2*3")
 test("1*2+3")
 test("2/4+1*3")
-test("1+2*3+4/2-1")
+
+test("5+2*3+4/2-1")
 test ("10%2*10%4+7")
 test("3+2^5*2")
 
+# example:
 
-
-# Sample:
 # test("1+2*3+4/2-1")
 # (Sub (Add (Add (Const 1) (Mul (Const 2) (Const 3))) (Div (Const 4) (Const 2))) (Const 1))
-# Python 2.x
+
 #>>> import compiler 
 #>>> compiler.parse("1+2*3+4/2-1", "eval")
 # Expression(Sub((Add((Add((Const(1), Mul((Const(2), Const(3))))), Div((Const(4), Const(2))))), Const(1))))
