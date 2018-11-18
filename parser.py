@@ -31,10 +31,17 @@ import sys
 import re
 
 
-# tabla que recoge todos los símbolos de la grámatica
-# entendiendo como símbolo: constantes, operadores, identificadores, keywords
-# symbol_table = {identificador token,clase del token}
-# ej) {constantes: clase constante, +: clase operador + ....}
+# symbol: constans, operators, ids, keywords
+# symbol_table = {symbol : symbol_class}
+# ej) {Const symbolConstant,
+#       + symbolAdd,
+#       - symbolSub,
+#       * symbolMul,
+#       / symbolDiv,
+#       ^ symbolPower,
+#       % symbolMod,
+#       (end) symbolConstant
+#       }
 
 symbol_table = {}
 
@@ -48,20 +55,14 @@ def symbol(id, bp=0):
      si ya existe una clase no se hace nada.
 
     Parámetros:
-    id -- identificador del token
-    bp -- binding power del token
+    id -- identificador, simbolo
+    bp -- binding power
 
     Return:
-    base -- clase del token. Base es una proto-clase, un modelo.
+    Clase_base -- Clase de ese símbolo. Clase_base es una proto-clase, un modelo.
             Por ejemplo si el token es "+" base será la clase del token +
             o lo que es lo mismo la clase del operador Add, si el token fuera *
             sería la clase operatorMul. Por ello se cambia el nombre de la clase.
-
-    Ejemplo:
-
-    symbol("+",10) 
-    crea una clase para el token con identidicador "Add" con bp=10
-    de igual manera que en otras versiones teniamos la clase operator_add
     """
 
     try:
@@ -99,9 +100,6 @@ def symbol(id, bp=0):
     return Clase_base
 
 
-# con una funcion generamos todas las clases para los símbolos
-# ver symbol_table
-
 symbol("Const")
 symbol("+", 10); symbol("-", 10)
 symbol("*", 20); symbol("/", 20)
@@ -109,11 +107,11 @@ symbol("^", 30); symbol("%",30)
 symbol("(end)")
 
 
-# Solo faltaría añadir las funciones/métodos nud (solo a constantes,+ y -)
+# nud method -> constants, + , -
 
 def prefix(id, bp):
     """
-    Para los casos UnarySub(-1) y UnaryAdd(+1)
+    UnarySub(-1) y UnaryAdd(+1)
     """
     def nud(self):
         self.first = parse(bp)
@@ -133,13 +131,11 @@ def tokenize(program):
     clase_token: Clase del token. Ver estructura de symbol_table. Cada token tiene asociado una clase
     en symbol_table, las constantes tienen la clase symbolConst, el operador + tiene symbolAdd ...
     
-    atomo = instancia de esa clase del token. Si el token es "+" atomo será una instancia de la clase
-    correspondiente a ese token que es operatorAdd
-
+    atomo = instancia de la clase del token. Si el token es "+" atomo será una instancia de la clase
+    correspondiente a ese token que es operatorAdd.
     """
 
     regex = r'\w+|[+/*-^<>%(|)]|"<-"|"and"|"or"|"not"|\".\"'
-    # token_pat = re.compile("\s*(?:(\d+)|(\*\*|.))")
 
     for token in re.findall(regex, program):
         if token.isnumeric():
@@ -194,15 +190,7 @@ def test(program):
     tree = parse()
     print (program, "-> Expression",tree,"\n")
 
-
-    """
-    Para la depuracion:
-
-    print (symbol_table)
-    for token,clase in symbol_table.items():
-        print (token, clase.__name__)
-    """
-
+# Samples
 
 test("+1")
 test("-1")
@@ -218,11 +206,11 @@ test ("10%2*10%4+7")
 test("3+2^5*2")
 
 
-# example:
-
+# Check:
 # test("1+2*3+4/2-1")
 # (Sub (Add (Add (Const 1) (Mul (Const 2) (Const 3))) (Div (Const 4) (Const 2))) (Const 1))
 
+# Python 2.x
 #>>> import compiler 
 #>>> compiler.parse("1+2*3+4/2-1", "eval")
 # Expression(Sub((Add((Add((Const(1), Mul((Const(2), Const(3))))), Div((Const(4), Const(2))))), Const(1))))
