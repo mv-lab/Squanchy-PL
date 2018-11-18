@@ -53,11 +53,9 @@ def symbol(id, bp=0):
 
     """Crea una clase para el token dado su id y bp, solo si es necesario,
      si ya existe una clase no se hace nada.
-
     Parámetros:
     id -- identificador, simbolo
     bp -- binding power
-
     Return:
     Clase_base -- Clase de ese símbolo. Clase_base es una proto-clase, un modelo.
             Por ejemplo si el token es "+" base será la clase del token +
@@ -85,7 +83,10 @@ def symbol(id, bp=0):
 
             def __repr__(self):
                 if self.value:
-                    return "(Const %s)" % self.value
+                    if self.value.isnumeric():
+                        return "(Const %s)" % self.value
+                    else: return "(Name %s)" % self.value
+
                 else:
                     return "(%s %s, %s)" % (names[self.id], self.first, self.second)
         
@@ -100,7 +101,7 @@ def symbol(id, bp=0):
     return Clase_base
 
 
-symbol("Const")
+symbol("Const"); symbol("Name")
 symbol("+", 10); symbol("-", 10)
 symbol("*", 20); symbol("/", 20)
 symbol("^", 30); symbol("%",30)
@@ -121,37 +122,63 @@ def prefix(id, bp):
 
 prefix("+", 100); prefix("-", 100)
 symbol("Const").nud = lambda self: self
+symbol("Name").nud = lambda self: self
+
+
+
+def tokenize_python(program):
+
+    """
+    Obtiene los tokens de <program> utilizando el propio módulo de Python tokenize.
+    """
+    
+    import tokenize
+    from io import BytesIO
+    type_map = {
+        tokenize.NUMBER: "Const",
+        tokenize.STRING: "Const",
+        tokenize.OP: "operator",
+        tokenize.NAME: "Name",
+    }
+    for t in tokenize.tokenize(BytesIO(program.encode('utf-8')).readline):
+        try:
+            yield type_map[t[0]], t[1]
+        except KeyError:
+            if t[0] == tokenize.NL:
+                continue
+            if t[0] == tokenize.ENCODING:
+                continue
+            if t[0] == tokenize.ENDMARKER:
+                break
+            else:
+                raise SyntaxError("Syntax error")
+    yield "(end)", "(end)"
 
 
 def tokenize(program):
 
-    """Obtiene los tokens de un trozo de código.
-    Ver regex.
-
-    clase_token: Clase del token. Ver estructura de symbol_table. Cada token tiene asociado una clase
-    en symbol_table, las constantes tienen la clase symbolConst, el operador + tiene symbolAdd ...
-    
-    atomo = instancia de la clase del token. Si el token es "+" atomo será una instancia de la clase
-    correspondiente a ese token que es operatorAdd.
+    """
+    Instancia 'atom' para la clase asociada a los tokens obtenidos mediante tokenize_python
+    (tokenize module). Ver symbol_table.
     """
 
-    regex = r'\w+|[+/*-^<>%(|)]|"<-"|"and"|"or"|"not"|\".\"'
-
-    for token in re.findall(regex, program):
-        if token.isnumeric():
-            clase_token = symbol_table["Const"]
-            atomo = clase_token()
-            atomo.value = token
-            yield atomo
+    for id, value in tokenize_python(program):
+        if id == "Const":
+            Clase_token = symbol_table[id]
+            atom = Clase_token()
+            atom.value = value
         else:
-            clase_token = symbol_table[token]
-            atomo = clase_token()
-            if not clase_token:
-                raise SyntaxError("Unknown token: %r" % token)
-            yield atomo
-
-    symbol = symbol_table["(end)"]
-    yield symbol()
+            # name or operator
+            Clase_token = symbol_table.get(value)
+            if Clase_token:
+                atom = Clase_token()
+            elif id == "Name":
+                Clase_token = symbol_table[id]
+                atom = Clase_token()
+                atom.value = value
+            else:
+                raise SyntaxError("Unknown operator (%r)" % id)
+        yield atom
 
 
 def parse(rbp=0):
@@ -159,7 +186,6 @@ def parse(rbp=0):
     """
     Pratt parser implementation.
     See "Top Down Operator Precedence" (section 3: Implementation, pág 47)
-
     rbp = right binding power. value of the expression's right part
     lbp = left binding power. value of the expression's left part
     ta = current token
@@ -204,6 +230,9 @@ test("2/4+1*3")
 test("5+2*3+4/2-1")
 test ("10%2*10%4+7")
 test("3+2^5*2")
+test ("x+1")
+test("a+b*c")
+test("'hello'+'world'")
 
 
 # Check:
@@ -214,3 +243,4 @@ test("3+2^5*2")
 #>>> import compiler 
 #>>> compiler.parse("1+2*3+4/2-1", "eval")
 # Expression(Sub((Add((Add((Const(1), Mul((Const(2), Const(3))))), Div((Const(4), Const(2))))), Const(1))))
+
