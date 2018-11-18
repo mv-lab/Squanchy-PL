@@ -31,93 +31,131 @@ import sys
 import re
 
 
-class const_token:
-    def __init__(self, value):
-        self.value = value
+# tabla que recoge todos los símbolos de la grámatica
+# entendiendo como símbolo: constantes, operadores, identificadores, keywords
+# symbol_table = {identificador token,clase del token}
+# ej) {constantes: clase constante, +: clase operador + ....}
 
+symbol_table = {}
+
+names = {"+":"Add","-":"Sub","*":"Mul","/":"Div",
+        "^":"Power","%":"Mod"}
+
+
+def symbol(id, bp=0):
+
+    """Crea una clase para el token dado su id y bp, solo si es necesario,
+     si ya existe una clase no se hace nada.
+
+    Parámetros:
+    id -- identificador del token
+    bp -- binding power del token
+
+    Return:
+    base -- clase del token. Base es una proto-clase, un modelo.
+            Por ejemplo si el token es "+" base será la clase del token +
+            o lo que es lo mismo la clase del operador Add, si el token fuera *
+            sería la clase operatorMul. Por ello se cambia el nombre de la clase.
+
+    Ejemplo:
+
+    symbol("+",10) 
+    crea una clase para el token con identidicador "Add" con bp=10
+    de igual manera que en otras versiones teniamos la clase operator_add
+    """
+
+    try:
+        Clase_base = symbol_table[id]
+    except KeyError:
+
+        class Clase_base:
+
+            def __init__ (self):
+                self.value = None
+                self.id = id
+
+            def led (self,left):
+                self.first = left
+                if self.id in ["^","%"]:
+                    self.second = parse(bp-1)
+                else:
+                    self.second = parse(bp)
+                return self
+
+            def __repr__(self):
+                if self.value:
+                    return "(Const %s)" % self.value
+                else:
+                    return "(%s %s, %s)" % (names[self.id], self.first, self.second)
+        
+        try:
+            Clase_base.__name__ = "symbol" + names[id]
+        except KeyError:
+            Clase_base.__name__ = "symbolConstant"
+
+        Clase_base.lbp = bp
+        symbol_table[id] = Clase_base
+
+    return Clase_base
+
+
+# con una funcion generamos todas las clases para los símbolos
+# ver symbol_table
+
+symbol("Const")
+symbol("+", 10); symbol("-", 10)
+symbol("*", 20); symbol("/", 20)
+symbol("^", 30); symbol("%",30)
+symbol("(end)")
+
+
+# Solo faltaría añadir las funciones/métodos nud (solo a constantes,+ y -)
+
+def prefix(id, bp):
+    """
+    Para los casos UnarySub(-1) y UnaryAdd(+1)
+    """
     def nud(self):
+        self.first = parse(bp)
+        self.second = None
         return self
+    symbol(id).nud = nud
 
-    def __repr__(self):
-        return "(Const %s)" % self.value
-
-class operator_level1:
-
-    def __init__(self, symbol):
-        self.symbol = symbol
-        self.lbp = 10
-        guide = {"+":"Add","-":"Sub"}
-        self.name = guide[self.symbol]
-
-    def nud(self):
-        self.izquierda = parse(100)
-        guide = {"+":"UnaryAdd","-":"UnarySub"}
-        self.name = guide[self.symbol]
-        return self
-
-    def led(self, left):
-        self.izquierda = left
-        self.derecha = parse(10)
-        return self
-
-    def __repr__(self):
-        if (self.name == "UnaryAdd" or self.name == "UnarySub"):
-            return "(%s %s)" % (self.name,self.izquierda)
-        else:
-            return "(%s %s, %s)" % (self.name,self.izquierda,self.derecha)
-
-class operator_level2:
-
-    def __init__(self, symbol):
-        self.symbol = symbol
-        self.lbp = 20
-        guide = {"*":"Mul","/":"Div"}
-        self.name = guide[self.symbol]
-
-    def led(self, left):
-        self.izquierda = left
-        self.derecha = parse(20)
-        return self
-
-    def __repr__(self):
-        return "(%s %s , %s)" % (self.name,self.izquierda, self.derecha)
-
-
-class operator_level3:
-
-    def __init__(self, symbol):
-        self.symbol = symbol
-        self.lbp = 30
-        guide = {"^":"Power","%":"Mod"}
-        self.name = guide[self.symbol]
-
-    def led(self, left):
-        self.izquierda = left
-        self.derecha = parse(30-1)
-        return self
-    def __repr__(self):
-        return "(%s %s , %s)" % (self.name,self.izquierda, self.derecha)
-
-class end_token:
-    lbp = 0
+prefix("+", 100); prefix("-", 100)
+symbol("Const").nud = lambda self: self
 
 
 def tokenize(program):
+
+    """Obtiene los tokens de un trozo de código.
+    Ver regex.
+
+    clase_token: Clase del token. Ver estructura de symbol_table. Cada token tiene asociado una clase
+    en symbol_table, las constantes tienen la clase symbolConst, el operador + tiene symbolAdd ...
+    
+    atomo = instancia de esa clase del token. Si el token es "+" atomo será una instancia de la clase
+    correspondiente a ese token que es operatorAdd
+
+    """
+
     regex = r'\w+|[+/*-^<>%(|)]|"<-"|"and"|"or"|"not"|\".\"'
     # token_pat = re.compile("\s*(?:(\d+)|(\*\*|.))")
 
     for token in re.findall(regex, program):
         if token.isnumeric():
-            yield const_token(int(token))
-        elif token in ["+","-"]:
-            yield operator_level1(token)
-        elif token in ["*","/"]:
-            yield operator_level2(token)
-        elif token in ["^","%"]:
-                yield operator_level3(token)
+            clase_token = symbol_table["Const"]
+            atomo = clase_token()
+            atomo.value = token
+            yield atomo
         else:
-            raise SyntaxError("unknown token: %r" % token)
-    yield end_token()
+            clase_token = symbol_table[token]
+            atomo = clase_token()
+            if not clase_token:
+                raise SyntaxError("Unknown token: %r" % token)
+            yield atomo
+
+    symbol = symbol_table["(end)"]
+    yield symbol()
 
 
 def parse(rbp=0):
@@ -157,20 +195,28 @@ def test(program):
     print (program, "-> Expression",tree,"\n")
 
 
+    """
+    Para la depuracion:
+
+    print (symbol_table)
+    for token,clase in symbol_table.items():
+        print (token, clase.__name__)
+    """
+
+
 test("+1")
 test("-1")
 test("1")
 test("-1+1")
-test("1+2+3")
+test("1+2+4")
 test("1+2+3-56")
-
 test("1+2*3")
 test("1*2+3")
 test("2/4+1*3")
-
 test("5+2*3+4/2-1")
 test ("10%2*10%4+7")
 test("3+2^5*2")
+
 
 # example:
 
