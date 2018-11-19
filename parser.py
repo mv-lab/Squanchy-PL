@@ -14,16 +14,6 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
-
-#  More information:
-#  * http://en.wikipedia.org/wiki/Vaughan_Pratt (Original Inventor)
-#  * http://en.wikipedia.org/wiki/Pratt_parser (Alias name)
-#  * https://eli.thegreenplace.net/2010/01/02/top-down-operator-precedence-parsing
-#  * http://effbot.org/zone/simple-top-down-parsing.htm 
-#  * http://javascript.crockford.com/tdop/tdop.html
-#  * https://gist.github.com/panesofglass/956563
-
 #-------------------------------------------------------------------------------
 
 
@@ -41,15 +31,16 @@ import re
 #       (end) symbol_end
 #       }
 
+token_list = []
+
 symbol_table = {}
 
 names_map = {"+":"Add","-":"Sub","*":"Mul","/":"Div",
         "**":"Power","%":"Mod","and":"And","or":"Or",
         "|":"Bitor","&":"Bitand","^":"Bitxor",
         "<<":"LeftShift",">>":"RightSift","lambda":"Lambda",
-        "if":"IfExp","<":"Compare",">":"Compare",
-        "<=":"Compare",">=":"Compare","==":"Compare","!=":"Compare",
-        "<>":"Compare","[":"List"}
+        "if":"IfExp","[":"List","=":"Assign"}
+
 
 
 def symbol(id, bp=0):
@@ -60,76 +51,93 @@ def symbol(id, bp=0):
     id -- identificador, simbolo
     bp -- binding power
     Return:
-    Clase_base -- Clase de ese símbolo. Clase_base es una proto-clase, un modelo.
+    Protoclase -- Clase de ese símbolo. Protoclase es una proto-clase, un modelo.
             Por ejemplo si el token es "+" base será la clase del token +
             o lo que es lo mismo la clase del operador Add, si el token fuera *
             sería la clase operatorMul. Por ello se cambia el nombre de la clase.
     """
 
     try:
-        Clase_base = symbol_table[id]
+        Protoclase = symbol_table[id]
     except KeyError:
 
-        class Clase_base:
+        class Protoclase:
 
             def __init__ (self):
                 self.value = None
                 self.first = self.second = self.third = None
                 self.id = id
+                self.arity = 2
                 try : self.name = names_map[self.id]
                 except KeyError: self.name= self.id
 
             def led (self,left):
                 self.first = left
-                if self.id in ["^","or","and"]:
+                if self.id in ["**","or","and","="]: # left asociative operators
                     self.second = parse(bp-1)
                 else:
                     self.second = parse(bp)
                 return self
 
             def __repr__(self):
-                if self.id == "Name" or self.id == "Const":
-                    return "(%s %s)" % (self.id, self.value)
-                out = [self.name, self.first, self.second, self.third]
+                               
+                out = [self.first, self.second, self.third]
                 out = map(str, filter(None, out))
-                return "(" + " ".join(out) + ")"
+
+                if self.arity == 1:
+                    return "(" + self.name +" "+ " ".join(out) + ")"
+
+                elif self.id == "Name" or self.id == "Const":
+                    return "(%s %s)" % (self.id, self.value)
+
+                return "(" + self.name + " "+ ",".join(out) + ")"
    
-        Clase_base.__name__ = "symbol-" + id
-        Clase_base.lbp = bp
-        symbol_table[id] = Clase_base
+        Protoclase.__name__ = "symbol-" + id
+        Protoclase.lbp = bp
+        symbol_table[id] = Protoclase
 
-    return Clase_base
+    return Protoclase
 
 
 
-def advance (id=None):
-    global token, value,tipo
+def peek (id=None):
+
+    """Genera la instancia el token siguiente según su correspondiente clase.
+    Permite comparar el id del siguiente con un id pasado por párametro.
+
+    Párametros:
+    id -- id del token que vamos a instanciar (next token). 
+        Si id = None simplemente se instanciará el siguiente token.
+        Si id tiene un valor, se compmrobará antes de instanciar.
+    """
+
+    global token
     if id and token.id != id:
         raise SyntaxError("Expected %r" % id)
-    token = next()
 
+    token = next()
+   
 
 def method(s):
-    # decorator
+
+    """Decorador para simplificar el código referido a los métodos nud y led.
+        Añade a la clase <tipo> la función referenciada al decorador, como método. 
+    """
     assert s in symbol_table.values()
-    def bind(fn):
-        setattr(s, fn.__name__, fn)
-    return bind
+    def new_method(fn):
+        setattr(s, fn.__name__, fn) # (clase, nombre funcion, valor = funcion)
+    return new_method
 
 
 
 # Ver https://docs.python.org/3/reference/expressions.html | 6.16. Operator precedence
 
 symbol("Const"); symbol("Name")
+symbol("Const"); symbol("Name")
 symbol("+", 110); symbol("-", 110)
 symbol("*", 120); symbol("/", 120)
 symbol("**", 140); symbol("%",120)
-symbol("(end)")
-
-symbol("[", 150); symbol("(", 150);symbol(")");symbol("]")
-symbol("}");symbol("{"); symbol(",");symbol(":"); symbol("=")
-
-symbol("lambda", 20); symbol("if", 20); symbol("else")
+symbol("(end)"); symbol("=",10)
 
 symbol("or",30);symbol("and",40)
 symbol("|", 70); symbol("^", 80); symbol("&", 90)
@@ -139,161 +147,135 @@ symbol(">", 60); symbol(">=", 60)
 symbol("<>", 60); symbol("!=", 60); symbol("==", 60)
 
 
-# nud method -> constants, + , -
+symbol("}");symbol("{"); symbol(",");symbol(":"); symbol("=")
+
+symbol("lambda", 20); 
+
+
+#--------------------------------------------------------------------------------------------
+# NUD FUNCTIONS
+
+symbol("Const").nud = lambda self: self
+symbol("Name").nud = lambda self: self
+
+# nud method -> + , - , not
 
 def prefix(id, bp):
     """
-    UnarySub(-1) y UnaryAdd(+1)
+    Prefix expressions.
+    Arity 1 => +,-, not => UnaryAdd, UnaryMinus, Not
     """
+    names = {"+":"UnaryAdd", "-":"UnarySub","not":"Not"}
     def nud(self):
         self.first = parse(bp)
-        self.second = None
-        aux = {"+":"UnaryAdd", "-":"UnarySub","not":"Not"}
-        self.name = aux[self.id]
+        self.name = names[self.id]
+        self.arity = 1
+        print (">",self.first,self.name)
         return self
     symbol(id).nud = nud
 
 prefix("+", 130); prefix("-", 130); prefix("not", 50)
 
-symbol("Const").nud = lambda self: self
-symbol("Name").nud = lambda self: self
+# Parenthesized Expressions 
 
+symbol("(", 150);symbol(")");
 
-
-@method(symbol("("))
 def nud(self):
-    # parenthesized form; replaced by tuple former below
     expr = parse()
-    advance(")")
+    peek(")")
     return expr
+symbol("(").nud = nud
 
 
-@method(symbol("if"))
-def led(self, left):
-    self.first = left
-    self.second = parse()
-    advance("else")
-    self.third = parse()
+# if-then-else
+# if _ then _ else _
+
+symbol("if", 20); symbol("else"); symbol("then",5)
+
+def nud(self):
+    self.first = parse(20)
+    peek("then")
+    self.second = parse(5)
+    try: 
+        peek("else")
+        self.third = parse()
+    except SyntaxError:
+        pass
+
+    self.arity = 3
     return self
 
+symbol("if").nud = nud
+
+
+def constant(id,value=None):
+    @method(symbol(id))
+    def nud(self):
+        self.id = "Const"
+        self.value = value
+        return self
+
+
+constant("None")
+constant("True",1)
+constant("False",0)
+constant("null")
+constant("pi", 3.141592653589793)
+
+
+#--------------------------------------------------------------------------------------------
+# LISTAS
+
+symbol("]"); symbol("[", 150);
 
 @method(symbol("["))
-def led(self, left):
-    self.first = left
-    self.second = parse()
-    advance("]")
+def nud(self):
+    lista = []
+    if token.id != "]":
+        while 1:
+            if token.id == "]":
+                break
+            lista.append(parse())
+            if token.id != ",":
+                break
+            peek(",")
+    peek("]")
+    self.first = lista
+    self.arity = 1
     return self
 
+#--------------------------------------------------------------------------------------------
+# FUNCTION CALLS
+
+symbol(")"); symbol(",")
 
 @method(symbol("("))
 def led(self, left):
-    self.first = left
-    self.second = []
+
+    self.first = left # function name
+    
+    # if left in Tabla de nombres
+    # else raise FuncionNameError as detail funcion + left + is not defined
+
+    self.second = [] # param
     if token.id != ")":
         while 1:
             self.second.append(parse())
             if token.id != ",":
                 break
-            advance(",")
-    advance(")")
-    self.name = "FuncCall"
+            peek(",")
+    peek(")")
+    self.arity = "function"
+    self.name = "FunCall"
     return self
 
-
-@method(symbol("lambda"))
-def nud(self):
-    self.first = []
-    if token.id != ":":
-        argument_list(self.first)
-    advance(":")
-    self.second = parse()
-    return self
-
-def argument_list(list):
-    while 1:
-        if token.id != "Name":
-            SyntaxError("Expected an argument name.")
-        list.append(token)
-        advance()
-        if token.id != ",":
-            break
-        advance(",")
-
-# constants
-
-def constant(id):
-    @method(symbol(id))
-    def nud(self):
-        self.id = "(literal)"
-        self.value = id
-        return self
-
-constant("None")
-constant("True")
-constant("False")
-
-
-# displays
-
-@method(symbol("("))
-def nud(self):
-    self.first = []
-    comma = False
-    if token.id != ")":
-        while 1:
-            if token.id == ")":
-                break
-            self.first.append(parse())
-            if token.id != ",":
-                break
-            comma = True
-            advance(",")
-    advance(")")
-    if not self.first or comma:
-        self.name = "Tuple"
-        return self # tuple
-    else:
-        return self.first[0]
-
-
-@method(symbol("["))
-def nud(self):
-    self.first = []
-    if token.id != "]":
-        while 1:
-            if token.id == "]":
-                break
-            self.first.append(parse())
-            if token.id != ",":
-                break
-            advance(",")
-    advance("]")
-    return self
-
-
-@method(symbol("{"))
-def nud(self):
-    self.first = []
-    if token.id != "}":
-        while 1:
-            if token.id == "}":
-                break
-            self.first.append(parse())
-            advance(":")
-            self.first.append(parse())
-            if token.id != ",":
-                break
-            advance(",")
-    advance("}")
-    self.name = "Dict"
-    return self
-
+#--------------------------------------------------------------------------------------------
 
 
 def tokenize_python(program):
 
     """
-    Obtiene los tokens de <program> utilizando el propio módulo de Python tokenize.
+    Genera los tokens de <program> utilizando el propio módulo de Python tokenize.
     """
     
     import tokenize
@@ -322,19 +304,21 @@ def tokenize_python(program):
 def tokenize(program):
 
     """
-    Instancia 'atom' para la clase asociada a los tokens obtenidos mediante tokenize_python
+    Genera una instancia 'atom' para la clase asociada al token obtenido mediante tokenize_python
     (tokenize module). Ver symbol_table.
     """
 
     for id, value in tokenize_python(program):
+
+        token_list.append((id,value)) # test
+
         if id == "Const":
             Clase_token = symbol_table[id]
             atom = Clase_token()
             atom.value = value
         else:
-            # name or operator
             Clase_token = symbol_table.get(value)
-            if Clase_token:
+            if Clase_token: # operator
                 atom = Clase_token()
             elif id == "Name":
                 Clase_token = symbol_table[id]
@@ -350,58 +334,66 @@ def parse(rbp=0):
     """
     Pratt parser implementation.
     See "Top Down Operator Precedence" (section 3: Implementation, pág 47)
+
     rbp = right binding power. value of the expression's right part
     lbp = left binding power. value of the expression's left part
-    ta = current token
+    token = current token
     left = expression's left side
     """
 
     global token
-    ta = token
-    token = next()
-    left = ta.nud()
+    t = token
+    peek()
+    left = t.nud()
 
     while rbp < token.lbp:
-        ta = token
-        token = next()
-        left = ta.led(left)
+        t = token
+        peek()
+        left = t.led(left)
     return left
 
 
 def test(program):
 
     global token, next
-    # creo el generador tokenize(program)
-    # next será el metodo next del generador
 
     next = tokenize(program).__next__ 
-    #tokenize(program)
     token = next()
     tree = parse()
     print (program, "-> ",tree,"\n")
+    #print (token_list) for debugging
+
+
 
 # Samples
+
+
+test("1+3*4+2**5")
+test("(a+b*4+5)**2")
+test("x=1")
+test("x= a+b")
+test("if a then b else c")
+test("if a>3 then b=3")
 
 test("not 1")
 test("not 3+4")
 test("not a+3*b")
+
+test("1");test("-1");test("+1")
+test("pi"); 
+test("False"); test("not True")
+
+test("lista=[1,2,3,'hola',56]")
+test("suma(4,5)")
+
 test("a and b")
 test("1 or 2")
 test("not a and b or c**4 ")
 test("a << b")
 test("1 >> 6")
 test("x != y")
-test("(1+2)*3")
-test("1 if 2 else 3")
-test("suma(4,5)")
-test("lambda a, b, c: a+b+c")
-test ("None"); test("True"); test("False")
-test("[1,2,3,4,5]")
-test("(a,b)")
-test("+1")
-test("not a")
-test("{1: 'one', 2: 'two'}")
 
+"""
 
 # Check:
 # test("1+2*3+4/2-1")
@@ -411,3 +403,5 @@ test("{1: 'one', 2: 'two'}")
 #>>> import compiler 
 #>>> compiler.parse("1+2*3+4/2-1", "eval")
 # Expression(Sub((Add((Add((Const(1), Mul((Const(2), Const(3))))), Div((Const(4), Const(2))))), Const(1))))
+
+"""
