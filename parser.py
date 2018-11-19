@@ -49,18 +49,16 @@ names_map = {"+":"Add","-":"Sub","*":"Mul","/":"Div",
         "<<":"LeftShift",">>":"RightSift","lambda":"Lambda",
         "if":"IfExp","<":"Compare",">":"Compare",
         "<=":"Compare",">=":"Compare","==":"Compare","!=":"Compare",
-        "<>":"Compare"}
+        "<>":"Compare","[":"List"}
 
 
 def symbol(id, bp=0):
 
     """Crea una clase para el token dado su id y bp, solo si es necesario,
-    si ya existe una clase no se hace nada.
-    
+     si ya existe una clase no se hace nada.
     Parámetros:
     id -- identificador, simbolo
     bp -- binding power
-    
     Return:
     Clase_base -- Clase de ese símbolo. Clase_base es una proto-clase, un modelo.
             Por ejemplo si el token es "+" base será la clase del token +
@@ -103,6 +101,23 @@ def symbol(id, bp=0):
     return Clase_base
 
 
+
+def advance (id=None):
+    global token, value,tipo
+    if id and token.id != id:
+        raise SyntaxError("Expected %r" % id)
+    token = next()
+
+
+def method(s):
+    # decorator
+    assert s in symbol_table.values()
+    def bind(fn):
+        setattr(s, fn.__name__, fn)
+    return bind
+
+
+
 # Ver https://docs.python.org/3/reference/expressions.html | 6.16. Operator precedence
 
 symbol("Const"); symbol("Name")
@@ -111,8 +126,10 @@ symbol("*", 120); symbol("/", 120)
 symbol("**", 140); symbol("%",120)
 symbol("(end)")
 
-symbol("[", 150); symbol("(", 150)
-symbol("lambda", 20); symbol("if", 20)
+symbol("[", 150); symbol("(", 150);symbol(")");symbol("]")
+symbol("}");symbol("{"); symbol(",");symbol(":"); symbol("=")
+
+symbol("lambda", 20); symbol("if", 20); symbol("else")
 
 symbol("or",30);symbol("and",40)
 symbol("|", 70); symbol("^", 80); symbol("&", 90)
@@ -141,6 +158,135 @@ prefix("+", 130); prefix("-", 130); prefix("not", 50)
 symbol("Const").nud = lambda self: self
 symbol("Name").nud = lambda self: self
 
+
+
+@method(symbol("("))
+def nud(self):
+    # parenthesized form; replaced by tuple former below
+    expr = parse()
+    advance(")")
+    return expr
+
+
+@method(symbol("if"))
+def led(self, left):
+    self.first = left
+    self.second = parse()
+    advance("else")
+    self.third = parse()
+    return self
+
+
+@method(symbol("["))
+def led(self, left):
+    self.first = left
+    self.second = parse()
+    advance("]")
+    return self
+
+
+@method(symbol("("))
+def led(self, left):
+    self.first = left
+    self.second = []
+    if token.id != ")":
+        while 1:
+            self.second.append(parse())
+            if token.id != ",":
+                break
+            advance(",")
+    advance(")")
+    self.name = "FuncCall"
+    return self
+
+
+@method(symbol("lambda"))
+def nud(self):
+    self.first = []
+    if token.id != ":":
+        argument_list(self.first)
+    advance(":")
+    self.second = parse()
+    return self
+
+def argument_list(list):
+    while 1:
+        if token.id != "Name":
+            SyntaxError("Expected an argument name.")
+        list.append(token)
+        advance()
+        if token.id != ",":
+            break
+        advance(",")
+
+# constants
+
+def constant(id):
+    @method(symbol(id))
+    def nud(self):
+        self.id = "(literal)"
+        self.value = id
+        return self
+
+constant("None")
+constant("True")
+constant("False")
+
+
+# displays
+
+@method(symbol("("))
+def nud(self):
+    self.first = []
+    comma = False
+    if token.id != ")":
+        while 1:
+            if token.id == ")":
+                break
+            self.first.append(parse())
+            if token.id != ",":
+                break
+            comma = True
+            advance(",")
+    advance(")")
+    if not self.first or comma:
+        self.name = "Tuple"
+        return self # tuple
+    else:
+        return self.first[0]
+
+
+@method(symbol("["))
+def nud(self):
+    self.first = []
+    if token.id != "]":
+        while 1:
+            if token.id == "]":
+                break
+            self.first.append(parse())
+            if token.id != ",":
+                break
+            advance(",")
+    advance("]")
+    return self
+
+
+@method(symbol("{"))
+def nud(self):
+    self.first = []
+    if token.id != "}":
+        while 1:
+            if token.id == "}":
+                break
+            self.first.append(parse())
+            advance(":")
+            self.first.append(parse())
+            if token.id != ",":
+                break
+            advance(",")
+    advance("}")
+    self.name = "Dict"
+    return self
 
 
 
@@ -232,26 +378,10 @@ def test(program):
     #tokenize(program)
     token = next()
     tree = parse()
-    print (program, "-> Expression",tree,"\n")
+    print (program, "-> ",tree,"\n")
 
 # Samples
 
-test("+1")
-test("-1")
-test("1")
-test("-1+1")
-test("1+2+4")
-test("1+2+3-56")
-test("1+2*3")
-test("1*2+3")
-test("2/4+1*3")
-test("5+2*3+4/2-1")
-test ("10%2*10%4+7")
-test("3+2**5*2")
-test ("x+1")
-test("a+b*c")
-test("'hello'+'world'")
-print ("\nNew\n")
 test("not 1")
 test("not 3+4")
 test("not a+3*b")
@@ -261,6 +391,17 @@ test("not a and b or c**4 ")
 test("a << b")
 test("1 >> 6")
 test("x != y")
+test("(1+2)*3")
+test("1 if 2 else 3")
+test("suma(4,5)")
+test("lambda a, b, c: a+b+c")
+test ("None"); test("True"); test("False")
+test("[1,2,3,4,5]")
+test("(a,b)")
+test("+1")
+test("not a")
+test("{1: 'one', 2: 'two'}")
+
 
 # Check:
 # test("1+2*3+4/2-1")
