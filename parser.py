@@ -19,6 +19,7 @@
 
 import sys
 import re
+import json
 
 
 # symbol: constans, operators, ids, keywords
@@ -43,15 +44,114 @@ names_map = {"+":"Add","-":"Sub","*":"Mul","/":"Div",
 
 
 
+
+#--------------------------------------------------------------------------------------------
+# NAME SPACE | SCOPE
+
+class namespace:
+
+    """Clase espacio de nombres. Scope
+    See https://pythonspot.com/scope/
+    Modeliza un espacio donde las variables son definidas y accesibles,
+    pudiendo haber variables locales y globales.
+    """
+
+    def __init__ (self):
+
+        self.names = {}
+
+    def define (self,n):
+
+        """ Define nuevas variables en el espacio <self>.
+        Transforma el token de un nombre a una variable.
+        Error si la variable ya esta en el espacio, o si el nombre dado ya esta reservado.
+        """
+        t = self.names[n.value]
+        if t:
+            raise NameError ("Already defined or reserved %r" % n)
+
+        self.names[n.value] = n
+        n.reserved = False
+        name.nud = lambda self: self
+        n.led = None
+        n.std = None
+        n.lbp = 0
+        n.space = space
+        return n
+
+    def find (self,name):
+
+        """Encuentra la defincion de <nombre>, el valor.
+        Busca en el espacio actual <self> y si no lo encuentra sube niveles,
+        en ultima instancia devuelve valor en symbol_table si no lo encuentra.
+        Además comprueba si <nombre> no esta undefined o es una funcion.
+        """
+
+        e = self
+        while 1:
+            o = e.names[name]
+            if o and o.arity != "function":
+                return e.names[name]
+            
+            e = e.parent
+            if not e:
+                o = symbol_table[name];
+                if o.arity != "function": return o
+                else: return symbol_table["Name"] 
+
+
+    def pop (self):
+
+        """Asciende un nivel en la jerárquia del espacio de nombres.
+        """
+        scope = self.parent
+
+
+    def reserve(self,name):
+
+        """Indica que <nombre> se ha usado o es una palabra reservada
+        en el espacio actual <self>.
+        Por ejemplo "if" será reservada y no podrá usarse como nombre de variable o funcion.
+        Los nombres se reservan localmente solo cuando se usen como palabras reservadas.
+
+        """
+
+        if (name.arity != "Name" or name.reserved):
+            return
+
+        t = self.names[name.value]
+        if t :
+            if t.reserved: return
+            if t.arity == "Name": raise NameError ("Already defined")
+
+        else:
+            self.names[name.value] = name
+            name.reserved = True
+
+
+    def __repr__(self):
+        return json.dumps(self.names)
+
+
+def new_space ():
+    s = space
+    space = namespace()
+    space.parent = s
+    return space;
+
+#--------------------------------------------------------------------------------------------
+
 def symbol(id, bp=0):
 
     """Crea una clase para el token dado su id y bp, solo si es necesario,
-     si ya existe una clase no se hace nada.
-    Parámetros:
-    id -- identificador, simbolo
-    bp -- binding power
-    Return:
-    Protoclase -- Clase de ese símbolo. Protoclase es una proto-clase, un modelo.
+        si ya existe una clase no se hace nada.
+
+        Parámetros:
+        id -- identificador, simbolo
+        bp -- binding power
+
+        Return:
+        Protoclase -- Clase de ese símbolo. Protoclase es una proto-clase, un modelo.
             Por ejemplo si el token es "+" base será la clase del token +
             o lo que es lo mismo la clase del operador Add, si el token fuera *
             sería la clase operatorMul. Por ello se cambia el nombre de la clase.
@@ -63,13 +163,25 @@ def symbol(id, bp=0):
 
         class Protoclase:
 
+            lbp = bp
+            value = id
+            
+            if id == "Name" or id == "Const":
+                arity = id
+            else:
+                arity=2
+
             def __init__ (self):
-                self.value = None
+
                 self.first = self.second = self.third = None
                 self.id = id
-                self.arity = 2
+                self.arity = None
+                self.reserved = False 
                 try : self.name = names_map[self.id]
-                except KeyError: self.name= self.id
+                except KeyError: self.name= self.id    
+
+            def nud (self):
+                pass
 
             def led (self,left):
                 self.first = left
@@ -92,15 +204,15 @@ def symbol(id, bp=0):
 
                 return "(" + self.name + " "+ ",".join(out) + ")"
    
+
         Protoclase.__name__ = "symbol-" + id
-        Protoclase.lbp = bp
         symbol_table[id] = Protoclase
 
     return Protoclase
 
 
 
-def peek (id=None):
+def advance (id=None):
 
     """Genera la instancia el token siguiente según su correspondiente clase.
     Permite comparar el id del siguiente con un id pasado por párametro.
@@ -132,8 +244,14 @@ def method(s):
 
 # Ver https://docs.python.org/3/reference/expressions.html | 6.16. Operator precedence
 
-symbol("Const"); symbol("Name")
-symbol("Const"); symbol("Name")
+
+space = namespace()
+space.parent = space
+
+
+symbol("Const");
+symbol("Name")
+
 symbol("+", 110); symbol("-", 110)
 symbol("*", 120); symbol("/", 120)
 symbol("**", 140); symbol("%",120)
@@ -146,10 +264,7 @@ symbol("<", 60); symbol("<=", 60)
 symbol(">", 60); symbol(">=", 60)
 symbol("<>", 60); symbol("!=", 60); symbol("==", 60)
 
-
 symbol("}");symbol("{"); symbol(",");symbol(":"); symbol("=")
-
-symbol("lambda", 20); 
 
 
 #--------------------------------------------------------------------------------------------
@@ -170,7 +285,6 @@ def prefix(id, bp):
         self.first = parse(bp)
         self.name = names[self.id]
         self.arity = 1
-        print (">",self.first,self.name)
         return self
     symbol(id).nud = nud
 
@@ -182,7 +296,7 @@ symbol("(", 150);symbol(")");
 
 def nud(self):
     expr = parse()
-    peek(")")
+    advance(")")
     return expr
 symbol("(").nud = nud
 
@@ -194,10 +308,10 @@ symbol("if", 20); symbol("else"); symbol("then",5)
 
 def nud(self):
     self.first = parse(20)
-    peek("then")
+    advance("then")
     self.second = parse(5)
     try: 
-        peek("else")
+        advance("else")
         self.third = parse()
     except SyntaxError:
         pass
@@ -213,6 +327,7 @@ def constant(id,value=None):
     def nud(self):
         self.id = "Const"
         self.value = value
+        self.arity = "Const"
         return self
 
 
@@ -238,8 +353,8 @@ def nud(self):
             lista.append(parse())
             if token.id != ",":
                 break
-            peek(",")
-    peek("]")
+            advance(",")
+    advance("]")
     self.first = lista
     self.arity = 1
     return self
@@ -263,14 +378,14 @@ def led(self, left):
             self.second.append(parse())
             if token.id != ",":
                 break
-            peek(",")
-    peek(")")
+            advance(",")
+    advance(")")
     self.arity = "function"
     self.name = "FunCall"
     return self
 
 #--------------------------------------------------------------------------------------------
-
+# LEXER
 
 def tokenize_python(program):
 
@@ -329,6 +444,7 @@ def tokenize(program):
         yield atom
 
 
+#--------------------------------------------------------------------------------------------
 def parse(rbp=0):
 
     """
@@ -343,30 +459,29 @@ def parse(rbp=0):
 
     global token
     t = token
-    peek()
+    advance()
     left = t.nud()
 
     while rbp < token.lbp:
         t = token
-        peek()
+        advance()
         left = t.led(left)
     return left
 
 
 def test(program):
 
-    global token, next
+    global token,space, next 
 
     next = tokenize(program).__next__ 
     token = next()
     tree = parse()
     print (program, "-> ",tree,"\n")
-    #print (token_list) for debugging
-
+    #print (token_list)
+    
 
 
 # Samples
-
 
 test("1+3*4+2**5")
 test("(a+b*4+5)**2")
@@ -389,9 +504,12 @@ test("suma(4,5)")
 test("a and b")
 test("1 or 2")
 test("not a and b or c**4 ")
+
 test("a << b")
 test("1 >> 6")
 test("x != y")
+test("a+a*(b-c)")
+test("a+a")
 
 """
 
@@ -403,5 +521,4 @@ test("x != y")
 #>>> import compiler 
 #>>> compiler.parse("1+2*3+4/2-1", "eval")
 # Expression(Sub((Add((Add((Const(1), Mul((Const(2), Const(3))))), Div((Const(4), Const(2))))), Const(1))))
-
 """
