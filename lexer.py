@@ -51,10 +51,6 @@ class Token():
         return "(%s, %s)" % (self.id, self.value)
 
 
-
-class InvalidToken(Exception):
-        pass
-
 def lexer (program):
 
     """Genera los tokens de <program>. Almacena los tokens en <token_list>
@@ -85,9 +81,11 @@ def lexer (program):
             continue
         else:
             id = "<%s>" % name
-            t = Token(id, m.group(0), pos)
+            token = Token(id, m.group(0), pos)
         
-        token_list.append(t)
+        token_list.append(token)
+        # yield token
+
 
     if i < len(program):
         error_handling()
@@ -123,4 +121,5 @@ if "--console" in sys.argv:
 
 if "--sample" in sys.argv:
     lexer ('a+b*4+"hola"-10/5')
+
 
