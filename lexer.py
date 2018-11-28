@@ -20,16 +20,16 @@
 import sys
 import re
 import os
-import parser
 
 
 # old pattern 
 # pattern = r"\s*(?:(<=|>=|::|<-|\W)|(\d+(?:\.\d*)?)|\".*\")|([a-zA-Z]\w*)"
 
 
+
 rules = (
     ('sep', r'\s+'),
-    ('name', r'[a-z][\w_]*'),
+    ('Name', r'[a-z][\w_]*'),
     ('operator', r'(<=|>=|<<|>>|::|<-|\*\*)|[:=+\-*%/\^<>\(\)&!,\[\]|]'),
     ('number', r'(:?\d*\.)?\d+'),
     ('string', r':?\"+\w+\"')
@@ -90,6 +90,9 @@ def lexer (program):
     if i < len(program):
         error_handling()
 
+
+    end = Token("(end)", "(end)", pos+1)
+    token_list.append(end) # quiza instanciar un token end
     return token_list
 
 
@@ -119,12 +122,12 @@ def console ():
 if "--console" in sys.argv:
     console()
 
-if "--sample" in sys.argv:
-    print (lexer ('a+b*4+"hola"-10/5'))
+if "--test" in sys.argv:
+
+    expr = input (">> ")
+    tl = lexer (expr)
+    print (tl,"\n")
+    for token in tl:
+        print (token,"\tid:",token.id,"\tval:",token.value,"\tpos:",token.pos)
 
 
-def main ():
-    print ("SQY lexer")
-
-if __name__ == "__main__":
-    main()
