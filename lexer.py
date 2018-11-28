@@ -20,7 +20,7 @@
 import sys
 import re
 import os
-
+import parser
 
 
 # old pattern 
@@ -53,7 +53,7 @@ class Token():
 
 def lexer (program):
 
-    """Genera los tokens de <program>. Almacena los tokens en <token_list>
+    """Return token list of <program>
     """
 
     token_list = []
@@ -80,7 +80,7 @@ def lexer (program):
         if name == "sep": # ojo los \n\t ...
             continue
         else:
-            id = "<%s>" % name
+            id = "%s" % name
             token = Token(id, m.group(0), pos)
         
         token_list.append(token)
@@ -90,7 +90,7 @@ def lexer (program):
     if i < len(program):
         error_handling()
 
-    print (token_list)
+    return token_list
 
 
 
@@ -113,13 +113,18 @@ def console ():
         if expr == "clear": 
             os.system('clear')
             console()
-        lexer(expr)
+        print (lexer(expr))
 
 
 if "--console" in sys.argv:
     console()
 
 if "--sample" in sys.argv:
-    lexer ('a+b*4+"hola"-10/5')
+    print (lexer ('a+b*4+"hola"-10/5'))
 
 
+def main ():
+    print ("SQY lexer")
+
+if __name__ == "__main__":
+    main()
