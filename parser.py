@@ -351,6 +351,7 @@ def nud(self):
     advance("]")
     self.first = lista
     self.arity = 1
+    self.name = "List"
     return self
 
 
@@ -383,10 +384,9 @@ def statement (end_stmt,end_block):
         pass
 
     elif token.id in end_stmt:
-        print ("hola")
         advance(token.id)
     else:
-        raise SyntaxError
+        raise SyntaxError ("Expected %r" % end_stmt)
 
     """
     try:
@@ -398,7 +398,7 @@ def statement (end_stmt,end_block):
     return expr
 		
 
-def statements (end_block=["(end)"], end_line= ["\\n\\t","(end)"]):
+def statements (end_block=["\\n","(end)"], end_line= ["\\n\\t","(end)","\\n"]):
     
     """Parses statements hasta llegar a (end) o }, que indica el fin del bloque.
         Return:
@@ -429,21 +429,8 @@ symbol("::")
 @method(symbol("::"))
 def nud (self):
     a = statements()
+    print ("despues de \\n",token)
     return a
-
-
-# !!! ojo repitiendo codigoo
-
-@method(symbol("then"))
-def nud (self):
-    a = statements(["(end)","else"])
-    return a
-
-@method(symbol("else"))
-def nud (self):
-    a = statements()
-    return a
-
 
 
 def block (key=None):
@@ -464,12 +451,23 @@ def nud (self):
     return self
 
 
-
 # while a<50 :: c=a+b\n\td=4\n ->  (while (< (Name a),(Const 50)),[(Assign (Name c),(Add (Name a),(Name b))), (Assign (Name d),(Const 4))]) 
 # while a<50 ::\nc=a+b\n\td=56**7 ->  (while (< (Name a),(Const 50)),[(Assign (Name c),(Add (Name a),(Name b))), (Assign (Name d),(Power (Const 56),(Const 7)))])
 
 
+
 symbol("if", 20); symbol("else"); symbol("then",5)
+
+
+@method(symbol("then"))
+def nud (self):
+    a = statements(["(end)","else"])
+    return a
+
+@method(symbol("else"))
+def nud (self):
+    a = statements()
+    return a
 
 def nud(self):
     self.first = parse(20)
@@ -501,20 +499,31 @@ def led(self,left):
         self.third = block("::")
         self.arity = "statement"
         self.name = "Function"
+        self.id = self.name
     
     except SyntaxError:
         self.third = None   
         self.arity = "2"
         self.name = "FunCall"
+        self.id = self.name
 
     return self
 
 
 # !!!
 def module ():
-    expr = parse()
-    print (">>",token)
-    return expr
+    program = []
+
+    if token.id != "(end)":
+        while 1:
+            if token.id == "(end)": break
+            program.append(parse())
+            #print (">>",program)
+            if token.id != "\\n": break
+            advance ("\\n")
+
+    advance("(end)")
+    return program
 
 
 symbol("Module")
@@ -522,7 +531,6 @@ symbol("Module")
 @method(symbol("Module"))
 def nud (self):
     self.first = module()
-    print ("module:",self.first)
     return self
 
 
@@ -722,10 +730,24 @@ if "--check" in sys.argv:
 	print (program, "-> ",tree,"\n")
 	visu.visualise(tree)
 
+
 if "--stmt" in sys.argv:
     program = input (">> ")
     tree = pratt(program)
     print (program, "-> ",tree,"\n")
+
+
+if "--try" in sys.argv:
+
+    f = open("code.txt","r")
+    program = f.read()
+    f.close()
+
+    program = program.strip()
+    print (program)
+
+    tree = pratt(program)
+    print ("\n\n",program, "->\n ",tree)
     
 
 def main():
