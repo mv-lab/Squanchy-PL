@@ -483,6 +483,7 @@ symbol(")"); symbol(",")
 
 @method(symbol("("))
 def led(self,left):
+    
     self.first = left
     # scope
     self.second = [] # param
@@ -493,8 +494,6 @@ def led(self,left):
             if token.id == ")":break
             
     advance(")")
-    print (">>",token)
-
     try: 
         self.third = block("::")
         self.arity = "statement"
@@ -506,6 +505,7 @@ def led(self,left):
         self.arity = "2"
         self.name = "FunCall"
         self.id = self.name
+        print (">>",self.first,self.second)
 
     return self
 
