@@ -14,6 +14,9 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# 
+# Based on:
+# https://gist.github.com/eliben/5797351
 #-------------------------------------------------------------------------------
 
 
@@ -21,16 +24,14 @@ import sys
 import re
 import os
 
-
-# old pattern 
-# pattern = r"\s*(?:(<=|>=|::|<-|\W)|(\d+(?:\.\d*)?)|\".*\")|([a-zA-Z]\w*)"
-
-
+#('sep', r'[,; ]'),
 
 rules = (
-    ('sep', r'\s+'),
-    ('Name', r'[a-z][\w_]*'),
-    ('operator', r'(<=|>=|<<|>>|::|<-|\*\*)|[:=+\-*%/\^<>\(\)&!,\[\]|]'),
+
+    ('stmt', r'\\n\\t|\\n'),
+    ('other',r'\s+|,|;'),
+    ('Name', r'[a-zA-Z_][\w_]*'),
+    ('operator', r'(<=|>=|<<|>>|!=|<>|::|<-|\*\*)|[:=+\-*%/\^<>\(\)&!}{\[\]|]'),
     ('number', r'(:?\d*\.)?\d+'),
     ('string', r':?\"+\w+\"')
 )
@@ -58,12 +59,14 @@ def lexer (program):
 
     token_list = []
 
+    module = Token("Module", "Module", -1)
+    token_list.append(module) 
     i = 0 # position
 
     def error_handling ():
 
         error_position = i+1
-        pointer = ("-"*(i+3))+"^"
+        pointer = program+"\n"+("-"*(i))+"^"
         print (pointer)
         raise SyntaxError("Unexpected character at position %d: `%s`" % (i+1, program[i]))
 
@@ -72,13 +75,18 @@ def lexer (program):
         pos = m.start()
         
         if pos > i:
+            print ("previa")
             error_handling()
 
         i = m.end()
         name = m.lastgroup
 
-        if name == "sep": # ojo los \n\t ...
+        if name == "other":
             continue
+
+        elif name == "stmt":
+            id = "%s" % name
+            token = Token(id, m.group(0), pos)
         else:
             id = "%s" % name
             token = Token(id, m.group(0), pos)
@@ -88,11 +96,12 @@ def lexer (program):
 
 
     if i < len(program):
+        print ("post")
         error_handling()
 
 
     end = Token("(end)", "(end)", pos+1)
-    token_list.append(end) # quiza instanciar un token end
+    token_list.append(end)
     return token_list
 
 
@@ -130,4 +139,16 @@ if "--test" in sys.argv:
     for token in tl:
         print (token,"\tid:",token.id,"\tval:",token.value,"\tpos:",token.pos)
 
+if "--input" in sys.argv:
+    f = open("code.txt")
+    program = f.read()
+    f.close()
+    print (program,"\n",lexer (program),"\n")
+
+
+if "--example" in sys.argv:
+    expr = "suma (a,b |c) :: c:a+b"
+    print (">>",expr,"\n",lexer (expr),"\n")
+    expr = "lista <- [1,2,3,4,5,6]"
+    print (">>",expr,"\n",lexer (expr),"\n")
 
