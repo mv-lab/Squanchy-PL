@@ -1,0 +1,24 @@
+
+suma (a,b|c) ::
+	c=a+b
+	a=a+15
+	b=5
+
+if a<=50 then 
+	print(a)
+	else print(a+1)
+
+while a<56 ::
+	a=a+1
+	b=True
+
+lista = [1 2 3 4 5 "string"]
+
+list2 = [12 45463 1.56 "hola"
+		45 35 57]
+
+a+b*c**2-(-1/2)
+
+while True :: pass
+
+x=y=z=8
