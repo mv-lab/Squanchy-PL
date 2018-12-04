@@ -338,8 +338,6 @@ symbol("global").nud = declare
 
 symbol("]"); symbol("[", 150);
 
-# !! añadir multilinea
-
 @method(symbol("["))
 def nud(self):
     lista = []
@@ -357,7 +355,6 @@ def nud(self):
 
 #--------------------------------------------------------------------------------------------
 # STATEMENTS
-
 
 
 def statement (end_stmt,end_block):
@@ -388,15 +385,9 @@ def statement (end_stmt,end_block):
     else:
         raise SyntaxError ("Expected %r" % end_stmt)
 
-    """
-    try:
-        advance("\\n\\t")
-
-    except SyntaxError:  
-        advance("(end)")
-    """
     return expr
 		
+
 
 def statements (end_block=["\\n","(end)"], end_line= ["\\n\\t","(end)","\\n"]):
     
@@ -413,7 +404,8 @@ def statements (end_block=["\\n","(end)"], end_line= ["\\n\\t","(end)","\\n"]):
     while 1:
         print (">>> estoy en statements",token)
 
-        if token.id in end_block : break
+        if token.id in end_block :
+            break
         s = statement(end_line,end_block) # un solo statement
         if s:
             stmt.append(s)
@@ -429,7 +421,6 @@ symbol("::")
 @method(symbol("::"))
 def nud (self):
     a = statements()
-    print ("despues de \\n",token)
     return a
 
 
@@ -455,13 +446,12 @@ def nud (self):
 # while a<50 ::\nc=a+b\n\td=56**7 ->  (while (< (Name a),(Const 50)),[(Assign (Name c),(Add (Name a),(Name b))), (Assign (Name d),(Power (Const 56),(Const 7)))])
 
 
-
 symbol("if", 20); symbol("else"); symbol("then",5)
 
 
 @method(symbol("then"))
 def nud (self):
-    a = statements(["(end)","else"])
+    a = statements(["(end)","else","\\n"])
     return a
 
 @method(symbol("else"))
@@ -469,24 +459,37 @@ def nud (self):
     a = statements()
     return a
 
+@method(symbol("if"))
 def nud(self):
     self.first = parse(20)
     self.second = block("then")
-    self.third = block() 
+
+    if token.id == "else":
+        self.third = block("else")
+    elif token.id == "\\n":
+        pass
+    else:
+        pass
+    
     self.arity = "statement"
     return self
 
-symbol("if").nud = nud
+# if a<45 then n=3\n\tc=4+n\nd="hola"
+# if a<=3 then a=a+b\n\tb=45 else c=4\nd="hola"
 
+
+
+#--------------------------------------------------------------------------------------------
+# FUNCTION CALLS & FUNCTION DECLARATION
 
 symbol(")"); symbol(",")
 
 @method(symbol("("))
 def led(self,left):
-    
+
     self.first = left
     # scope
-    self.second = [] # param
+    self.second = [] # arg
     if token.id != ")":
         while 1:
             self.second.append(token)
@@ -505,12 +508,14 @@ def led(self,left):
         self.arity = "2"
         self.name = "FunCall"
         self.id = self.name
-        print (">>",self.first,self.second)
 
     return self
 
 
+#--------------------------------------------------------------------------------------------
+# MODULE/PROGRAM statement
 # !!!
+
 def module ():
     program = []
 
@@ -536,34 +541,9 @@ def nud (self):
 
 
 #--------------------------------------------------------------------------------------------
-# FUNCTION CALLS
-
-"""
-symbol(")"); symbol(",")
-
-@method(symbol("("))
-def led(self, left):
-
-    self.first = left # function name
-    
-    # if left in Tabla de nombres
-    # else raise FuncionNameError as detail funcion + left + is not defined
-
-    self.second = [] # param
-    if token.id != ")":
-        while 1:
-            self.second.append(token)
-            advance()
-            if token.id == ")":break
-            
-    advance(")")
-    self.arity = 2
-    self.name = "FunCall"
-    return self
-"""
-
-#--------------------------------------------------------------------------------------------
+# !!!
 # LAMBDA FUNCTION
+# by: http://effbot.org/zone/simple-top-down-parsing.htm
 
 symbol(":"), symbol("lambda",20)
 
@@ -625,6 +605,9 @@ def tokenize(program):
 
 
 #--------------------------------------------------------------------------------------------
+# PARSER ENGINE
+
+
 def parse(rbp=0):
 
     """
@@ -660,7 +643,6 @@ def pratt(program): # ast
     return tree
  
 
-
 def test(program):
 
     tree = pratt(program)
@@ -668,6 +650,9 @@ def test(program):
     #print (format(tree))
 
 
+
+#--------------------------------------------------------------------------------------------
+# OPTIONS
 
 if "--console" in sys.argv:
     print ("Squanchy PL console test")
@@ -680,42 +665,15 @@ if "--console" in sys.argv:
 
 if "--sample" in sys.argv:
 
-	print ("\nExamples\n"+(30*"--")+"\n")
-    # hacer un fichero txt con todo esto y que lo lea ...
+    print ("\nExamples\n"+(30*"--")+"\n")
 
-	test('lista=[1,2,3,"hola",56]')
+    f = open("examples.txt")
+    file = f.readlines()
+    f.close()
 
-	test ("a+b+c")
-	test("x= a+b")
-
-	test("1+3*4+2**5")
-	test("(a+b*4+5)**2")
-	test("x=1")
-	test("x= a+b")
-	test("if a then b else c")
-	test("if a>3 then b=3")
-
-	test("not 1")
-	test("not 3+4")
-	test("not a+3*b")
-
-
-	test("1");test("-1");test("+1")
-	test("pi"); 
-	test("False"); test("not True")
-
-	test('lista=[1,2,3,"hola",56]')
-	test("suma(4,5)")
-	test ("lambda a, b, c: a+b+c")
-
-	test("a and b")
-	test("1 or 2")
-	test("not a and b or c**4 ")
-
-	test("a << b")
-	test("1 >> 6")
-	test("x != y")
-	test("a+a*(b-c)")
+    for example in file:
+        example = example.strip()
+        print (example, "-> ",pratt(example),"\n")
 
 	
 if "--benchmark" in sys.argv:
@@ -724,30 +682,25 @@ if "--benchmark" in sys.argv:
 	test (program)
 
 
-if "--check" in sys.argv:
+if "--img" in sys.argv:
 	program = input (">> ")
 	tree = pratt(program)
 	print (program, "-> ",tree,"\n")
 	visu.visualise(tree)
 
 
-if "--stmt" in sys.argv:
-    program = input (">> ")
-    tree = pratt(program)
-    print (program, "-> ",tree,"\n")
+if "--in" in sys.argv:
 
-
-if "--try" in sys.argv:
-
-    f = open("code.txt","r")
+    f = open("code.txt")
     program = f.read()
     f.close()
 
-    program = program.strip()
-    print (program)
+    program = program.replace("\n","\\n")
+    program = program.replace("\t","\\t")
 
     tree = pratt(program)
     print ("\n\n",program, "->\n ",tree)
+    #visu.visualise(tree)
     
 
 def main():
