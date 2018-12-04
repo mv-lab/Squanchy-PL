@@ -20,6 +20,7 @@
 import sys
 import re
 import json
+import visualiser as visu
 
 
 # symbol: constans, operators, ids, keywords
@@ -38,10 +39,9 @@ symbol_table = {}
 
 names_map = {"+":"Add","-":"Sub","*":"Mul","/":"Div",
         "**":"Power","%":"Mod","and":"And","or":"Or",
-        "|":"Bitor","&":"Bitand","^":"Bitxor",
+        "&":"Bitand","^":"Bitxor",
         "<<":"LeftShift",">>":"RightSift","lambda":"Lambda",
         "if":"IfExp","[":"List","=":"Assign"}
-
 
 
 
@@ -139,6 +139,7 @@ def new_space ():
     space.parent = s
     return space;
 
+
 #--------------------------------------------------------------------------------------------
 
 def symbol(id, bp=0):
@@ -227,8 +228,21 @@ def advance (id=None):
     if id and token.id != id:
         raise SyntaxError("Expected %r" % id)
 
-    token = next()
-   
+    if token.id == "(end)": pass
+    else:
+        token = next()
+
+
+def ignore (id=None):
+
+    """Advance mod. Ignores token <id>.
+    """
+
+    global token
+    while token.id == id:
+        token = next()
+    if token.id == "(end)": pass
+
 
 def method(s):
 
@@ -242,20 +256,16 @@ def method(s):
 
 
 
-# Ver https://docs.python.org/3/reference/expressions.html | 6.16. Operator precedence
+# See https://docs.python.org/3/reference/expressions.html | 6.16. Operator precedence
 
-
-space = namespace()
-space.parent = space
-
-
-symbol("Const");
+symbol("Const")
 symbol("Name")
+symbol("(end)")
 
 symbol("+", 110); symbol("-", 110)
 symbol("*", 120); symbol("/", 120)
 symbol("**", 140); symbol("%",120)
-symbol("(end)"); symbol("=",10)
+symbol("=",10)
 
 symbol("or",30);symbol("and",40)
 symbol("|", 70); symbol("^", 80); symbol("&", 90)
@@ -264,8 +274,8 @@ symbol("<", 60); symbol("<=", 60)
 symbol(">", 60); symbol(">=", 60)
 symbol("<>", 60); symbol("!=", 60); symbol("==", 60)
 
-symbol("}");symbol("{"); symbol(",");symbol(":"); symbol("=")
-
+symbol("}");symbol("{"); symbol(",");symbol(":");symbol(";") #symbol(" ")
+symbol("\\n\\t"); symbol("\\n") ; symbol("\\t")
 
 #--------------------------------------------------------------------------------------------
 # NUD FUNCTIONS
@@ -301,33 +311,18 @@ def nud(self):
 symbol("(").nud = nud
 
 
-# if-then-else
-# if _ then _ else _
+#--------------------------------------------------------------------------------------------
+# CONSTANTS
 
-symbol("if", 20); symbol("else"); symbol("then",5)
-
-def nud(self):
-    self.first = parse(20)
-    advance("then")
-    self.second = parse(5)
-    try: 
-        advance("else")
-        self.third = parse()
-    except SyntaxError:
-        pass
-
-    self.arity = 3
-    return self
-
-symbol("if").nud = nud
+ctes = []
 
 
 def constant(id,value=None):
+    ctes.append(id)
     @method(symbol(id))
     def nud(self):
         self.id = "Const"
         self.value = value
-        self.arity = "Const"
         return self
 
 
@@ -338,8 +333,19 @@ constant("null")
 constant("pi", 3.141592653589793)
 
 
+def declare (self):
+    self.first = parse()
+    constant(self.first.value)
+    return self
+
+symbol("global",1000)
+symbol("global").nud = declare
+
+
 #--------------------------------------------------------------------------------------------
-# LISTAS
+# LISTS
+
+#!!! tipos -> prueba = [a+b 1 2 3]
 
 symbol("]"); symbol("[", 150);
 
@@ -348,103 +354,292 @@ def nud(self):
     lista = []
     if token.id != "]":
         while 1:
-            if token.id == "]":
-                break
-            lista.append(parse())
-            if token.id != ",":
-                break
-            advance(",")
+            ignore("\\n") # !! cuanto permito??
+            ignore("\\n\\t")
+            ignore("\\t")
+            lista.append(token)
+            advance()
+            if token.id == "]":break
     advance("]")
     self.first = lista
     self.arity = 1
+    self.name = "List"
     return self
 
+
 #--------------------------------------------------------------------------------------------
-# FUNCTION CALLS
+# STATEMENTS | BLOCK
+
+
+"""
+program : Module
+Module : statement|block
+block : statement_list | statement  [end_block] statement_list
+statement_list : statement|statement [end_stmt] statement_list
+statement : simple_statement| assign_statement | empty
+empty: 
+
+"""
+
+def statement (end_stmt,end_block):
+
+    """Parses one statement. Si el token tiene un método std se llama al método,
+    en otro caso se trata de una expresión, una linea que termina en ";".
+
+    -- ?? Error: si el statement no es una asignacion o una funcall.
+
+    """
+	
+    #print (">>",token)
+
+    if (token.arity == "statement"):
+        advance()
+        # ojo al scope
+        return token.nud()
+
+    expr = parse()
+
+    #print ("!!!! statement",token)
+
+    if token.id in end_block:
+        pass
+
+    elif token.id in end_stmt:
+        advance(token.id)
+    else:
+        raise SyntaxError ("Expected %r" % end_stmt)
+
+    return expr
+		
+
+
+def statement_list (end_block=["\\n","(end)"], end_line= ["\\n\\t","(end)","\\n"]):
+    
+    """Parses statements hasta llegar a (end) o }, que indica el fin del bloque.
+        Return:
+            - statement
+            - stmt = array of statements
+            - None si no hay statement
+    """
+
+    
+    stmt = [] # array of statements
+
+    while 1:
+        #print (">>> estoy en statements",token)
+
+        if token.id in end_block :
+            break
+        s = statement(end_line,end_block) # un solo statement
+        if s:
+            stmt.append(s)
+
+    if len(stmt) == 0: return None
+    elif len(stmt) == 1: return [stmt[0]] # s
+    else: return stmt
+
+
+def block (key=None):
+    t = token
+    advance(key)
+    ignore("\\n")
+    ignore("\\n\\t")
+    return t.nud()
+
+
+
+symbol("::")
+
+@method(symbol("::"))
+def nud (self):
+    a = statement_list()
+    return a
+
+
+#--------------------------------------------------------------------------------------------
+# WHILE statement
+
+symbol("while")
+
+@method(symbol("while"))
+def nud (self):
+    self.first = parse()
+    self.second = block("::")
+    self.arity = "statement"
+    self.name = "While_stmt"
+    return self
+
+
+# while a<50 :: c=a+b\n\td=4\n ->  (while (< (Name a),(Const 50)),[(Assign (Name c),(Add (Name a),(Name b))), (Assign (Name d),(Const 4))]) 
+# while a<50 ::\nc=a+b\n\td=56**7 ->  (while (< (Name a),(Const 50)),[(Assign (Name c),(Add (Name a),(Name b))), (Assign (Name d),(Power (Const 56),(Const 7)))])
+
+
+#--------------------------------------------------------------------------------------------
+# IF-THEN-ELSE statement
+
+symbol("if", 20); symbol("else"); symbol("then",5)
+
+
+@method(symbol("then"))
+def nud (self):
+    a = statement_list(["(end)","else","\\n"])
+    return a
+
+@method(symbol("else"))
+def nud (self):
+    a = statement_list()
+    return a
+
+@method(symbol("if"))
+def nud(self):
+    self.first = parse(20)
+    self.second = block("then")
+
+    if token.id == "else":
+        self.third = block("else")
+    elif token.id == "\\n":
+        pass
+    else:
+        pass
+    
+    self.arity = "statement"
+    return self
+
+# if a<45 then n=3\n\tc=4+n\nd="hola"
+# if a<=3 then a=a+b\n\tb=45 else c=4\nd="hola"
+
+
+#--------------------------------------------------------------------------------------------
+# FUNCTION CALLS & FUNCTION DECLARATION
 
 symbol(")"); symbol(",")
 
 @method(symbol("("))
-def led(self, left):
+def led(self,left):
 
-    self.first = left # function name
-    
-    # if left in Tabla de nombres
-    # else raise FuncionNameError as detail funcion + left + is not defined
+    self.first = left
+    # scope
+    self.second = [] # arg
 
-    self.second = [] # param
     if token.id != ")":
         while 1:
-            self.second.append(parse())
-            if token.id != ",":
-                break
-            advance(",")
+            self.second.append(token)
+            advance()
+            if token.id == ")":break
+            
     advance(")")
-    self.arity = "function"
-    self.name = "FunCall"
+    try: 
+        self.third = block("::")
+        self.arity = "statement"
+        self.name = "Function"
+        self.id = self.name
+    
+    except SyntaxError:
+        self.third = None   
+        self.arity = "2"
+        self.name = "FunCall"
+        self.id = self.name
+
     return self
+
+
+#--------------------------------------------------------------------------------------------
+# MODULE/PROGRAM statement
+
+def module ():
+    program = []
+
+    ignore ("\\n")
+    if token.id != "(end)":
+        while 1:
+            program.append(parse())
+            #print (">>",program)
+            if token.id != "\\n": break
+            ignore ("\\n")
+            #print (">>>", token)
+
+    advance("(end)")
+    return program
+
+
+
+symbol("Module")
+
+@method(symbol("Module"))
+def nud (self):
+    self.first = module()
+    return self
+
+
+
+#--------------------------------------------------------------------------------------------
+# !!!
+# LAMBDA FUNCTION
+# by: http://effbot.org/zone/simple-top-down-parsing.htm
+
+symbol(":"), symbol("lambda",20)
+
+@method(symbol("lambda"))
+def nud(self):
+    self.first = []
+    if token.id != ":":
+        argument_list(self.first)
+    advance(":")
+    self.second = parse()
+    return self
+
+def argument_list(list):
+    while 1:
+        if token.id != "Name":
+            SyntaxError("Expected an argument name.")
+        list.append(token)
+        advance()
+        if token.id != ",":
+            break
+        advance(",")
+
 
 #--------------------------------------------------------------------------------------------
 # LEXER
 
-def tokenize_python(program):
-
-    """
-    Genera los tokens de <program> utilizando el propio módulo de Python tokenize.
-    """
-    
-    import tokenize
-    from io import BytesIO
-    type_map = {
-        tokenize.NUMBER: "Const",
-        tokenize.STRING: "Const",
-        tokenize.OP: "operator",
-        tokenize.NAME: "Name",
-    }
-    for t in tokenize.tokenize(BytesIO(program.encode('utf-8')).readline):
-        try:
-            yield type_map[t[0]], t[1]
-        except KeyError:
-            if t[0] == tokenize.NL:
-                continue
-            if t[0] == tokenize.ENCODING:
-                continue
-            if t[0] == tokenize.ENDMARKER:
-                break
-            else:
-                raise SyntaxError("Syntax error")
-    yield "(end)", "(end)"
-
-
 def tokenize(program):
 
     """
-    Genera una instancia 'atom' para la clase asociada al token obtenido mediante tokenize_python
-    (tokenize module). Ver symbol_table.
+    # Genera una instancia 'atom' para la clase asociada al token obtenido mediante tokenize_python
+    # (tokenize module). Ver symbol_table.
     """
 
-    for id, value in tokenize_python(program):
+    import lexer as lex
 
-        token_list.append((id,value)) # test
+    for token in lex.lexer(program):
 
-        if id == "Const":
-            Clase_token = symbol_table[id]
-            atom = Clase_token()
-            atom.value = value
-        else:
-            Clase_token = symbol_table.get(value)
-            if Clase_token: # operator
-                atom = Clase_token()
-            elif id == "Name":
-                Clase_token = symbol_table[id]
-                atom = Clase_token()
-                atom.value = value
-            else:
-                raise SyntaxError("Unknown operator (%r)" % id)
-        yield atom
+    	if token.id == "number" or token.id == "string":
+    		Clase_token = symbol_table["Const"]
+    		atom = Clase_token()
+    		atom.value = token.value
+
+    	else:
+
+    		Clase_token = symbol_table.get(token.value)
+
+    		if Clase_token:
+    			atom = Clase_token()
+
+    		elif token.id == "Name":
+
+    			Clase_token = symbol_table[token.id]
+    			atom = Clase_token()
+    			atom.value = token.value
+    		else:
+    			raise SyntaxError("Unknown operator (%r)" % token.value)
+
+    	yield atom
 
 
 #--------------------------------------------------------------------------------------------
+# PARSER ENGINE
+
+
 def parse(rbp=0):
 
     """
@@ -469,56 +664,83 @@ def parse(rbp=0):
     return left
 
 
-def test(program):
+def ast(program): 
 
     global token,space, next 
 
     next = tokenize(program).__next__ 
     token = next()
     tree = parse()
+    return tree
+ 
+
+def test(program):
+
+    tree = ast(program)
     print (program, "-> ",tree,"\n")
-    #print (token_list)
+
+
+
+#--------------------------------------------------------------------------------------------
+# OPTIONS
+
+if "--terminal" in sys.argv:
+    # if a then while a :: b=5\n\tc=b+a\nd=56
+    # suma (a,b|c) :: c=a+b\n\ta=a+1\nd=56
+    # suma (a,b|c) :: c=a+b\n\ta=a+1\nd=56\n if a then b else c
+
+    print ("Squanchy PL console test")
+    print ("v1.0","\n")
+    while True:
+        expr = input (">> ")
+        if expr == "exit": exit()
+        print (ast(expr))
+
+
+if "--sample" in sys.argv:
+
+    print ("\nExamples\n"+(30*"--")+"\n")
+
+    f = open("examples.txt")
+    file = f.readlines()
+    f.close()
+
+    for example in file:
+        example = example.strip()
+        print (example, "-> ",ast(example),"\n")
+
+	
+if "--benchmark" in sys.argv:
+
+	program = """(lambda Ru,Ro,Iu,Io,IM,Sx,Sy:reduce(lambda x,y:x+y,map(lambda y,Iu=Iu,Io=Io,Ru=Ru,Ro=Ro,Sy=Sy,L=lambda yc,Iu=Iu,Io=Io,Ru=Ru,Ro=Ro,i=IM,Sx=Sx,Sy=Sy:reduce(lambda x,y:x+y,map(lambda x,xc=Ru,yc=yc,Ru=Ru,Ro=Ro,i=i,Sx=Sx,F=lambda xc,yc,x,y,k,f=lambda xc,yc,x,y,k,f:(k<=0)or (x*x+y*y>=4.0) or 1+f(xc,yc,x*x-y*y+xc,2.0*x*y+yc,k-1,f):f(xc,yc,x,y,k,f):chr(64+F(Ru+x*(Ro-Ru)/Sx,yc,0,0,i)),range(Sx))):L(Iu+y*(Io-Iu)/Sy),range(Sy))))(-2.1, 0.7, -1.2, 1.2, 30, 80, 24)"""
+	test (program)
+
+
+if "--img" in sys.argv:
+	program = input (">> ")
+	tree = ast(program)
+	print (program, "-> ",tree,"\n")
+	visu.visualise(tree)
+
+
+if "--in" in sys.argv:
+
+    f = open("code.txt")
+    program = f.read()
+    f.close()
+
+    program = program.replace("\n","\\n")
+    program = program.replace("\t","\\t")
+
+    tree = ast(program)
+    print ("\n",tree)
+    #visu.visualise(tree)
     
 
+def main():
+	pass
 
-# Samples
 
-test("1+3*4+2**5")
-test("(a+b*4+5)**2")
-test("x=1")
-test("x= a+b")
-test("if a then b else c")
-test("if a>3 then b=3")
+if __name__ == "__main__":
+	main()
 
-test("not 1")
-test("not 3+4")
-test("not a+3*b")
-
-test("1");test("-1");test("+1")
-test("pi"); 
-test("False"); test("not True")
-
-test("lista=[1,2,3,'hola',56]")
-test("suma(4,5)")
-
-test("a and b")
-test("1 or 2")
-test("not a and b or c**4 ")
-
-test("a << b")
-test("1 >> 6")
-test("x != y")
-test("a+a*(b-c)")
-test("a+a")
-
-"""
-
-# Check:
-# test("1+2*3+4/2-1")
-# (Sub (Add (Add (Const 1) (Mul (Const 2) (Const 3))) (Div (Const 4) (Const 2))) (Const 1))
-
-# Python 2.x
-#>>> import compiler 
-#>>> compiler.parse("1+2*3+4/2-1", "eval")
-# Expression(Sub((Add((Add((Const(1), Mul((Const(2), Const(3))))), Div((Const(4), Const(2))))), Const(1))))
-"""
