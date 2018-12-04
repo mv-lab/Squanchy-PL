@@ -27,7 +27,7 @@ import os
 
 rules = (
 
-    ('stmt', r'\\n\\t|\\n'),
+    ('stmt', r'\\n\\t|\\n|\\t'),
     ('other',r'\s+|,|;'),
     ('Name', r'[a-zA-Z_][\w_]*'),
     ('operator', r'(<=|>=|<<|>>|!=|<>|::|<-|\*\*)|[:=+\-*%/\^<>\(\)&!}{\[\]|]'),
@@ -74,7 +74,6 @@ def lexer (program):
         pos = m.start()
         
         if pos > i:
-            print ("previa")
             error_handling()
 
         i = m.end()
@@ -95,7 +94,6 @@ def lexer (program):
 
 
     if i < len(program):
-        print ("post")
         error_handling()
 
 
