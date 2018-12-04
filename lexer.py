@@ -24,7 +24,6 @@ import sys
 import re
 import os
 
-#('sep', r'[,; ]'),
 
 rules = (
 
@@ -131,20 +130,6 @@ def console ():
 if "--console" in sys.argv:
     console()
 
-if "--test" in sys.argv:
-
-    expr = input (">> ")
-    tl = lexer (expr)
-    print (tl,"\n")
-    for token in tl:
-        print (token,"\tid:",token.id,"\tval:",token.value,"\tpos:",token.pos)
-
-if "--input" in sys.argv:
-    f = open("code.txt")
-    program = f.read()
-    f.close()
-    print (program,"\n",lexer (program),"\n")
-
 
 if "--example" in sys.argv:
     expr = "suma (a,b |c) :: c:a+b"
@@ -152,3 +137,24 @@ if "--example" in sys.argv:
     expr = "lista <- [1,2,3,4,5,6]"
     print (">>",expr,"\n",lexer (expr),"\n")
 
+if "--txt" in sys.argv:
+    f = open("code.txt")
+    program = f.read()
+    f.close()
+    program = program.replace("\n","\\n")
+    program = program.replace("\t","\\t")
+    print (program,"\n",lexer (program),"\n")
+
+
+def main ():
+    expr = input (">> ")
+    tl = lexer (expr)
+    print (tl,"\n")
+    for token in tl:
+        print (token,"\tid:",token.id,"\tval:",token.value,"\tpos:",token.pos)
+
+
+if __name__ == "__main__":
+    main()
+
+    
