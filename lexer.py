@@ -23,6 +23,8 @@
 import sys
 import re
 import os
+import time
+from statistics import mean 
 
 
 rules = (
@@ -63,7 +65,7 @@ def lexer (program):
     i = 0 # position
 
     def error_handling ():
-
+        # !!! modificar, añadir linea y corregir la cadena de salida
         error_position = i+1
         pointer = program+"\n"+("-"*(i))+"^"
         print (pointer)
@@ -129,13 +131,41 @@ if "--console" in sys.argv:
     console()
 
 
-if "--example" in sys.argv:
-    expr = "suma (a,b |c) :: c:a+b"
-    print (">>",expr,"\n",lexer (expr),"\n")
-    expr = "lista <- [1,2,3,4,5,6]"
-    print (">>",expr,"\n",lexer (expr),"\n")
+if "--test" in sys.argv:
+
+    """Benchmark. SQY Lexer vs Python's tokenize module.
+    Same code written in SQY and Python: <code.txt> <code_py.txt>
+    """
+
+    program = open("code.txt").read()
+    program = program.replace("\n","\\n") # !!! mirar si se puede cambiar
+    program = program.replace("\t","\\t")
+
+    measure = []
+    for i in range(1000):
+        start = time.time()
+        lexer(program) # real result with print (lexer(program))
+        end = time.time()
+        measure.append(end-start)
+
+    start = time.time()
+    os.system("python -m tokenize code_py.txt")
+    end = time.time()
+
+    sqy_time = mean(measure)
+    py_time = float(end-start)
+
+    # compare times
+    print ("sqy time >>",sqy_time)
+    print ("py time >>",py_time)
+    print ("how better? =",float(py_time/sqy_time),"times")
+    exit()
+
 
 if "--txt" in sys.argv:
+
+    """Test lexer with input.txt
+    """
     f = open("code.txt")
     program = f.read()
     f.close()
