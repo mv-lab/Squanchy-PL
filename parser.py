@@ -20,18 +20,14 @@
 import sys
 import re
 import json
+import time
 import visualiser as visu
+from statistics import mean 
+import os
 
 
 # symbol: constans, operators, ids, keywords
 # symbol_table = {symbol : symbol_class}
-# ej) {Const symbol-Constant,
-#       + symbol_+,
-#       - symbol_-,
-#       * symbol_*,
-#        ...
-#       (end) symbol_end
-#       }
 
 token_list = []
 
@@ -645,11 +641,6 @@ def parse(rbp=0):
     """
     Pratt parser implementation.
     See "Top Down Operator Precedence" (section 3: Implementation, pág 47)
-
-    rbp = right binding power. value of the expression's right part
-    lbp = left binding power. value of the expression's left part
-    token = current token
-    left = expression's left side
     """
 
     global token
@@ -664,7 +655,11 @@ def parse(rbp=0):
     return left
 
 
-def ast(program): 
+
+def ast(program):
+
+    """Creates AST using Pratt's Parser
+    """
 
     global token,space, next 
 
@@ -674,23 +669,18 @@ def ast(program):
     return tree
  
 
-def test(program):
-
-    tree = ast(program)
-    print (program, "-> ",tree,"\n")
-
-
 
 #--------------------------------------------------------------------------------------------
 # OPTIONS
 
+
 if "--terminal" in sys.argv:
-    # if a then while a :: b=5\n\tc=b+a\nd=56
-    # suma (a,b|c) :: c=a+b\n\ta=a+1\nd=56
-    # suma (a,b|c) :: c=a+b\n\ta=a+1\nd=56\n if a then b else c
+
+    """Interactive terminal for testing
+    """
 
     print ("Squanchy PL console test")
-    print ("v1.0","\n")
+    print ("v1.1","\n")
     while True:
         expr = input (">> ")
         if expr == "exit": exit()
@@ -698,6 +688,9 @@ if "--terminal" in sys.argv:
 
 
 if "--sample" in sys.argv:
+
+    """Show samples.
+    """
 
     print ("\nExamples\n"+(30*"--")+"\n")
 
@@ -712,19 +705,41 @@ if "--sample" in sys.argv:
 	
 if "--benchmark" in sys.argv:
 
-	program = """(lambda Ru,Ro,Iu,Io,IM,Sx,Sy:reduce(lambda x,y:x+y,map(lambda y,Iu=Iu,Io=Io,Ru=Ru,Ro=Ro,Sy=Sy,L=lambda yc,Iu=Iu,Io=Io,Ru=Ru,Ro=Ro,i=IM,Sx=Sx,Sy=Sy:reduce(lambda x,y:x+y,map(lambda x,xc=Ru,yc=yc,Ru=Ru,Ro=Ro,i=i,Sx=Sx,F=lambda xc,yc,x,y,k,f=lambda xc,yc,x,y,k,f:(k<=0)or (x*x+y*y>=4.0) or 1+f(xc,yc,x*x-y*y+xc,2.0*x*y+yc,k-1,f):f(xc,yc,x,y,k,f):chr(64+F(Ru+x*(Ro-Ru)/Sx,yc,0,0,i)),range(Sx))):L(Iu+y*(Io-Iu)/Sy),range(Sy))))(-2.1, 0.7, -1.2, 1.2, 30, 80, 24)"""
-	test (program)
+    """Benchmark. SQY Parser vs Python's compiler module
+    Same code written in SQY and Python: <code.txt> <code_py.txt>
+    See bench.py
+    """
+
+    #program = """(lambda Ru,Ro,Iu,Io,IM,Sx,Sy:reduce(lambda x,y:x+y,map(lambda y,Iu=Iu,Io=Io,Ru=Ru,Ro=Ro,Sy=Sy,L=lambda yc,Iu=Iu,Io=Io,Ru=Ru,Ro=Ro,i=IM,Sx=Sx,Sy=Sy:reduce(lambda x,y:x+y,map(lambda x,xc=Ru,yc=yc,Ru=Ru,Ro=Ro,i=i,Sx=Sx,F=lambda xc,yc,x,y,k,f=lambda xc,yc,x,y,k,f:(k<=0)or (x*x+y*y>=4.0) or 1+f(xc,yc,x*x-y*y+xc,2.0*x*y+yc,k-1,f):f(xc,yc,x,y,k,f):chr(64+F(Ru+x*(Ro-Ru)/Sx,yc,0,0,i)),range(Sx))):L(Iu+y*(Io-Iu)/Sy),range(Sy))))(-2.1, 0.7, -1.2, 1.2, 30, 80, 24)"""
+    program = open("code.txt").read()
+    program = program.replace("\n","\\n")
+    program = program.replace("\t","\\t")
+
+    measure = []
+    for i in range(1000):
+        start = time.time()
+        ast(program)
+        end = time.time()
+        measure.append(end-start)
+
+    print ("sqy time >>",mean(measure))
+    os.system("python bench.py")
 
 
 if "--img" in sys.argv:
-	program = input (">> ")
-	tree = ast(program)
-	print (program, "-> ",tree,"\n")
-	visu.visualise(tree)
+
+    """Test tree visualisation.
+    """
+    program = input (">> ")
+    tree = ast(program)
+    print (program, "-> ",tree,"\n")
+    visu.visualise(tree)
 
 
 if "--in" in sys.argv:
-
+    
+    """Test input.txt
+    """
     f = open("code.txt")
     program = f.read()
     f.close()
@@ -736,6 +751,7 @@ if "--in" in sys.argv:
     print ("\n",tree)
     #visu.visualise(tree)
     
+
 
 def main():
 	pass
