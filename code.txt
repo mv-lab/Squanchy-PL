@@ -34,7 +34,7 @@ list2 : [12 45463 1.56 "hola"
 
 a+b*c**2-(-1/2)
 
-x:y:z:8
+x:y:z:10
 
 not a or b and c
 
