@@ -37,14 +37,14 @@ names_map = {"+":"Add","-":"Sub","*":"Mul","/":"Div",
         "**":"Power","%":"Mod","and":"And","or":"Or",
         "&":"Bitand","^":"Bitxor",
         "<<":"LeftShift",">>":"RightSift","lambda":"Lambda",
-        "if":"IfExp","[":"List","=":"Assign"}
+        "if":"IfExp","[":"List",":":"Assign","(":"LP",")":"RP"}
 
 
 
 #--------------------------------------------------------------------------------------------
 # NAME SPACE | SCOPE
 
-class namespace:
+class Scope:
 
     """Clase espacio de nombres. Scope
     See https://pythonspot.com/scope/
@@ -124,6 +124,8 @@ class namespace:
             self.names[name.value] = name
             name.reserved = True
 
+    def new (self,name,value):
+        self.names[name] = value
 
     def __repr__(self):
         return json.dumps(self.names)
@@ -131,42 +133,49 @@ class namespace:
 
 def new_space ():
     s = space
-    space = namespace()
+    space = Scope()
     space.parent = s
     return space;
 
+SCOPE = Scope()
 
 #--------------------------------------------------------------------------------------------
 
 def symbol(id, bp=0):
 
-    """Crea una clase para el token dado su id y bp, solo si es necesario,
-        si ya existe una clase no se hace nada.
+    """Creates a new class for token <id> (if necessary)
 
-        Parámetros:
-        id -- identificador, simbolo
+        Param:
+        id -- token's id or symbol
         bp -- binding power
 
         Return:
-        Protoclase -- Clase de ese símbolo. Protoclase es una proto-clase, un modelo.
-            Por ejemplo si el token es "+" base será la clase del token +
-            o lo que es lo mismo la clase del operador Add, si el token fuera *
-            sería la clase operatorMul. Por ello se cambia el nombre de la clase.
+        Protoclass -- Symbol <id> Class. Sample: token's id = "+" 
+        then return the symbol's <+> class, called SymClass_+
+
     """
 
     try:
-        Protoclase = symbol_table[id]
+        Protoclass = symbol_table[id]
     except KeyError:
 
-        class Protoclase:
+        class Protoclass:
+
+            """Prototype Class model for grammar symbols.
+            Default nud and led methods.
+            Default attributes: lbp, id, value, arity ...
+            """
+
+            # Class attributes
 
             lbp = bp
             value = id
             
             if id == "Name" or id == "Const":
-                arity = id
+                arity = 0
             else:
                 arity=2
+
 
             def __init__ (self):
 
@@ -177,12 +186,22 @@ def symbol(id, bp=0):
                 try : self.name = names_map[self.id]
                 except KeyError: self.name= self.id    
 
+
             def nud (self):
-                pass
+                """Default nud method.
+                """
+
+                print ("me cago en la puta como salga esto")
+                raise SyntaxError("Syntax error (%r)." % self.id)
 
             def led (self,left):
+
+                """Defaulr led method.
+                Check infix and infix_r.
+                """
+
                 self.first = left
-                if self.id in ["**","or","and","="]: # left asociative operators
+                if self.id in ["**","or","and",":"]: # left asociative operators
                     self.second = parse(bp-1)
                 else:
                     self.second = parse(bp)
@@ -194,18 +213,17 @@ def symbol(id, bp=0):
                 out = map(str, filter(None, out))
 
                 if self.arity == 1:
-                    return "(" + self.name +" "+ " ".join(out) + ")"
+                    return self.name +"("+ "".join(out) + ")"
 
                 elif self.id == "Name" or self.id == "Const":
-                    return "(%s %s)" % (self.id, self.value)
+                    return "%s (%s)" % (self.id, self.value)
 
-                return "(" + self.name + " "+ ",".join(out) + ")"
-   
+                return self.name + "("+ ",".join(out) + ")"
 
-        Protoclase.__name__ = "symbol-" + id
-        symbol_table[id] = Protoclase
+        Protoclass.__name__ = "SymClass_" + id
+        symbol_table[id] = Protoclass
 
-    return Protoclase
+    return Protoclass
 
 
 
@@ -240,112 +258,147 @@ def ignore (id=None):
     if token.id == "(end)": pass
 
 
-def method(s):
+def add_method(symbol_class):
 
-    """Decorador para simplificar el código referido a los métodos nud y led.
-        Añade a la clase <tipo> la función referenciada al decorador, como método. 
+    """Decorator. Add <fn> as symbol_class method.
     """
-    assert s in symbol_table.values()
+    assert symbol_class in symbol_table.values()
     def new_method(fn):
-        setattr(s, fn.__name__, fn) # (clase, nombre funcion, valor = funcion)
+        setattr(symbol_class, fn.__name__, fn) # (class, function name, value = funcion)
     return new_method
 
 
 
+# Fill Symbol Table
+# To understand bp and operator precedence:
 # See https://docs.python.org/3/reference/expressions.html | 6.16. Operator precedence
 
 symbol("Const")
 symbol("Name")
 symbol("(end)")
 
+
+# Expressions/Factor Symbols
+
 symbol("+", 110); symbol("-", 110)
 symbol("*", 120); symbol("/", 120)
 symbol("**", 140); symbol("%",120)
-symbol("=",10)
-
 symbol("or",30);symbol("and",40)
-symbol("|", 70); symbol("^", 80); symbol("&", 90)
-symbol("<<", 100); symbol(">>", 100)
+symbol("<<", 100); symbol(">>", 90)
+
+# Compare
 symbol("<", 60); symbol("<=", 60)
 symbol(">", 60); symbol(">=", 60)
-symbol("<>", 60); symbol("!=", 60); symbol("==", 60)
+symbol("!=", 60); symbol("=", 60) # "different" and "equal" symbols
 
+# Constants
+symbol("global",1000)
+
+# Lists
+symbol("]"); symbol("[", 150);
+
+# Parentheses and Tuples
+symbol("(", 150);symbol(")");symbol(",")
+
+# Statement
+symbol("::"); symbol("->")
+symbol(":",10)
+symbol("|")
+
+symbol("while")
+symbol("if", 20); symbol("else"); symbol("then",5)
+
+symbol(")"); symbol(",")
 symbol("}");symbol("{"); symbol(",");symbol(":");symbol(";") #symbol(" ")
 symbol("\\n\\t"); symbol("\\n") ; symbol("\\t")
 
+symbol("Module")
+
+
 #--------------------------------------------------------------------------------------------
-# NUD FUNCTIONS
+# Add NUD and LED methods to each symbol using decorator <add_method> (if necessary)
+# Remember each symbol has his own class with default atributtes and methods, 
+# so we may have to change them.
+
 
 symbol("Const").nud = lambda self: self
-symbol("Name").nud = lambda self: self
 
-# nud method -> + , - , not
+
+"""
+def nud (self):
+    pass
+"""
+
+@add_method(symbol("Name"))
+def nud (self):
+
+    #print (SCOPE)
+    if self.value not in SCOPE.names:
+        return self
+    
+
+    else:
+        # FunCall
+        self.name = self.id = "FunCall"
+        self.first = token
+        print ("arg:",self.first)
+        advance()
+        return self
+
+symbol("Name").nud = lambda self: self # !!!
+
+
 
 def prefix(id, bp):
     """
     Prefix expressions.
-    Arity 1 => +,-, not => UnaryAdd, UnaryMinus, Not
+    Arity 1.
+    Examples: +,-, not => UnaryAdd, UnaryMinus, Not
     """
     names = {"+":"UnaryAdd", "-":"UnarySub","not":"Not"}
+    
+    @add_method(symbol(id))
     def nud(self):
         self.first = parse(bp)
         self.name = names[self.id]
         self.arity = 1
         return self
-    symbol(id).nud = nud
 
 prefix("+", 130); prefix("-", 130); prefix("not", 50)
 
-# Parenthesized Expressions 
-
-symbol("(", 150);symbol(")");
-
-def nud(self):
-    expr = parse()
-    advance(")")
-    return expr
-symbol("(").nud = nud
-
 
 #--------------------------------------------------------------------------------------------
-# CONSTANTS
+# CONSTANTS -> symbol = "global"
 
-ctes = []
-
-
-def constant(id,value=None):
-    ctes.append(id)
-    @method(symbol(id))
+def constant(id,value):
+    @add_method(symbol(id))
     def nud(self):
         self.id = "Const"
         self.value = value
+        SCOPE.new(id,value)
         return self
 
-
-constant("None")
+constant("null",None)
 constant("True",1)
 constant("False",0)
-constant("null")
 constant("pi", 3.141592653589793)
 
-
-def declare (self):
-    self.first = parse()
-    constant(self.first.value)
+# user | global expr -> ex) global X=5 O global X
+@add_method(symbol("global"))
+def nud (self):
+    self.first = token # var
+    advance("Name")
+    self.second = token # value
+    advance ("Const")
+    constant(self.first.value,self.second)
     return self
-
-symbol("global",1000)
-symbol("global").nud = declare
-
 
 #--------------------------------------------------------------------------------------------
 # LISTS
 
 #!!! tipos -> prueba = [a+b 1 2 3]
 
-symbol("]"); symbol("[", 150);
-
-@method(symbol("["))
+@add_method(symbol("["))
 def nud(self):
     lista = []
     if token.id != "]":
@@ -353,6 +406,7 @@ def nud(self):
             ignore("\\n") # !! cuanto permito??
             ignore("\\n\\t")
             ignore("\\t")
+            assert token.id == "Const"
             lista.append(token)
             advance()
             if token.id == "]":break
@@ -361,6 +415,59 @@ def nud(self):
     self.arity = 1
     self.name = "List"
     return self
+
+#--------------------------------------------------------------------------------------------
+# TUPLES and Parenthesized Expressions
+# () error
+# (1) is a parenthesized expression
+# (1 2) is a tuple
+
+
+@add_method(symbol("("))
+def nud(self):
+    self.first = []
+    comma = False
+    if token.id != ")":
+        while 1:
+            if token.id == ")":
+                break
+            #self.first.append(token)
+            self.first.append(parse())
+            if token.id != ",":
+                break
+            comma = True
+            advance(",")
+    advance(")")
+    if not self.first or comma:
+        return self # tuple
+    else:
+        return self.first[0]
+
+#--------------------------------------------------------------------------------------------
+# !!!
+# LAMBDA FUNCTION
+# by: http://effbot.org/zone/simple-top-down-parsing.htm
+
+symbol("lambda",20)
+
+@add_method(symbol("lambda"))
+def nud(self):
+    self.first = []
+    if token.id != ":":
+        argument_list(self.first)
+    advance(":")
+    self.second = parse()
+    return self
+
+def argument_list(list):
+    while 1:
+        if token.id != "Name":
+            SyntaxError("Expected an argument name.")
+        list.append(token)
+        advance()
+        if token.id != ",":
+            break
+        advance(",")
 
 
 #--------------------------------------------------------------------------------------------
@@ -443,50 +550,106 @@ def block (key=None):
     return t.nud()
 
 
-
-symbol("::")
-
-@method(symbol("::"))
+@add_method(symbol("::"))
 def nud (self):
     a = statement_list()
     return a
 
 
 #--------------------------------------------------------------------------------------------
+# FUNCTION CALLS & FUNCTION DECLARATION
+
+@add_method(symbol("("))
+def led(self,left):
+
+    self.first = left
+    self.second = []
+    arg = []
+    ret = []
+
+    if token.id != ")":
+        while 1:
+            if token.id == ")":break
+            arg.append(parse())
+            if token.id != ",":break
+            advance(",")
+
+    advance(")")
+    self.second.append(arg)
+
+    if self.first.value in SCOPE.names:
+        #funcall
+        #print (self.first)
+        self.third = None   
+        self.arity = "2"
+        self.name = "FunCall"
+        self.id = self.name
+        return self
+
+
+    #SCOPE.new (left.value,left.value)
+    #print (SCOPE)
+
+    advance ("->")
+    #t = token
+    #advance()
+
+    ret.append(parse())
+    #ret.append(t.nud())
+    self.second.append(ret)
+
+    # statement
+    try :
+        self.third = block("::")
+        self.arity = "statement"
+        
+    except SyntaxError:
+        pass
+
+    self.name = "Function"
+    self.id = self.name
+
+    return self
+
+"""
+suma (a,b) -> a+b
+suma (a,b) -> (c,d) :: c:a+b\n\td:a-b
+suma (a,b) -> c
+suma (4,5) -> 9
+"""
+
+#--------------------------------------------------------------------------------------------
 # WHILE statement
 
-symbol("while")
 
-@method(symbol("while"))
+@add_method(symbol("while"))
 def nud (self):
     self.first = parse()
+    print (self.first)
     self.second = block("::")
     self.arity = "statement"
     self.name = "While_stmt"
     return self
 
 
-# while a<50 :: c=a+b\n\td=4\n ->  (while (< (Name a),(Const 50)),[(Assign (Name c),(Add (Name a),(Name b))), (Assign (Name d),(Const 4))]) 
+# while a<50 : c=a+b\n\td=4\n ->  (while (< (Name a),(Const 50)),[(Assign (Name c),(Add (Name a),(Name b))), (Assign (Name d),(Const 4))]) 
 # while a<50 ::\nc=a+b\n\td=56**7 ->  (while (< (Name a),(Const 50)),[(Assign (Name c),(Add (Name a),(Name b))), (Assign (Name d),(Power (Const 56),(Const 7)))])
 
 
 #--------------------------------------------------------------------------------------------
 # IF-THEN-ELSE statement
 
-symbol("if", 20); symbol("else"); symbol("then",5)
-
-
-@method(symbol("then"))
+@add_method(symbol("then"))
 def nud (self):
     a = statement_list(["(end)","else","\\n"])
     return a
 
-@method(symbol("else"))
+@add_method(symbol("else"))
 def nud (self):
     a = statement_list()
     return a
 
-@method(symbol("if"))
+@add_method(symbol("if"))
 def nud(self):
     self.first = parse(20)
     self.second = block("then")
@@ -504,41 +667,6 @@ def nud(self):
 # if a<45 then n=3\n\tc=4+n\nd="hola"
 # if a<=3 then a=a+b\n\tb=45 else c=4\nd="hola"
 
-
-#--------------------------------------------------------------------------------------------
-# FUNCTION CALLS & FUNCTION DECLARATION
-
-symbol(")"); symbol(",")
-
-@method(symbol("("))
-def led(self,left):
-
-    self.first = left
-    # scope
-    self.second = [] # arg
-
-    if token.id != ")":
-        while 1:
-            self.second.append(token)
-            advance()
-            if token.id == ")":break
-            
-    advance(")")
-    try: 
-        self.third = block("::")
-        self.arity = "statement"
-        self.name = "Function"
-        self.id = self.name
-    
-    except SyntaxError:
-        self.third = None   
-        self.arity = "2"
-        self.name = "FunCall"
-        self.id = self.name
-
-    return self
-
-
 #--------------------------------------------------------------------------------------------
 # MODULE/PROGRAM statement
 
@@ -548,51 +676,27 @@ def module ():
     ignore ("\\n")
     if token.id != "(end)":
         while 1:
+            if token.id == "(end)": break
             program.append(parse())
-            #print (">>",program)
             if token.id != "\\n": break
             ignore ("\\n")
-            #print (">>>", token)
 
     advance("(end)")
     return program
 
 
-
-symbol("Module")
-
-@method(symbol("Module"))
+@add_method(symbol("Module"))
 def nud (self):
     self.first = module()
     return self
 
 
+@add_method(symbol("Module"))
+def __repr__ (self):
+    out = self.first
+    out = map(str, out)
+    return "Module [ \n\t"+ "\n\t".join(out) +"\n]"
 
-#--------------------------------------------------------------------------------------------
-# !!!
-# LAMBDA FUNCTION
-# by: http://effbot.org/zone/simple-top-down-parsing.htm
-
-symbol(":"), symbol("lambda",20)
-
-@method(symbol("lambda"))
-def nud(self):
-    self.first = []
-    if token.id != ":":
-        argument_list(self.first)
-    advance(":")
-    self.second = parse()
-    return self
-
-def argument_list(list):
-    while 1:
-        if token.id != "Name":
-            SyntaxError("Expected an argument name.")
-        list.append(token)
-        advance()
-        if token.id != ",":
-            break
-        advance(",")
 
 
 #--------------------------------------------------------------------------------------------
@@ -661,7 +765,7 @@ def ast(program):
     """Creates AST using Pratt's Parser
     """
 
-    global token,space, next 
+    global token,next 
 
     next = tokenize(program).__next__ 
     token = next()
@@ -702,29 +806,6 @@ if "--sample" in sys.argv:
         example = example.strip()
         print (example, "-> ",ast(example),"\n")
 
-	
-if "--benchmark" in sys.argv:
-
-    """Benchmark. SQY Parser vs Python's compiler module
-    Same code written in SQY and Python: <code.txt> <code_py.txt>
-    See bench.py
-    """
-
-    #program = """(lambda Ru,Ro,Iu,Io,IM,Sx,Sy:reduce(lambda x,y:x+y,map(lambda y,Iu=Iu,Io=Io,Ru=Ru,Ro=Ro,Sy=Sy,L=lambda yc,Iu=Iu,Io=Io,Ru=Ru,Ro=Ro,i=IM,Sx=Sx,Sy=Sy:reduce(lambda x,y:x+y,map(lambda x,xc=Ru,yc=yc,Ru=Ru,Ro=Ro,i=i,Sx=Sx,F=lambda xc,yc,x,y,k,f=lambda xc,yc,x,y,k,f:(k<=0)or (x*x+y*y>=4.0) or 1+f(xc,yc,x*x-y*y+xc,2.0*x*y+yc,k-1,f):f(xc,yc,x,y,k,f):chr(64+F(Ru+x*(Ro-Ru)/Sx,yc,0,0,i)),range(Sx))):L(Iu+y*(Io-Iu)/Sy),range(Sy))))(-2.1, 0.7, -1.2, 1.2, 30, 80, 24)"""
-    program = open("code.txt").read()
-    program = program.replace("\n","\\n")
-    program = program.replace("\t","\\t")
-
-    measure = []
-    for i in range(1000):
-        start = time.time()
-        ast(program)
-        end = time.time()
-        measure.append(end-start)
-
-    print ("sqy time >>",mean(measure))
-    os.system("python bench.py")
-
 
 if "--img" in sys.argv:
 
@@ -738,14 +819,14 @@ if "--img" in sys.argv:
 
 if "--in" in sys.argv:
     
-    """Test input.txt
+    """Test input
     """
+
     f = open("code.txt")
     program = f.read()
     f.close()
 
-    program = program.replace("\n","\\n")
-    program = program.replace("\t","\\t")
+    program = program.replace("\n","\\n").replace("\t","\\t")
 
     tree = ast(program)
     print ("\n",tree)
