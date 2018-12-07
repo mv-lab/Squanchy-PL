@@ -28,15 +28,12 @@ from statistics import mean
 
 
 rules = (
-
     ('stmt', r'\\n\\t|\\n|\\t'),
-    ('other',r'\s+|,|;'),
+    ('other',r'\s+|;'),
     ('Name', r'[a-zA-Z_][\w_]*'),
-    ('operator', r'(<=|>=|<<|>>|!=|<>|::|<-|\*\*)|[:=+\-*%/\^<>\(\)&!}{\[\]|]'),
+    ('operator', r'(<=|>=|<<|>>|!=|==|<>|::|<-|->|\*\*)|[:=+\-*%/\^<>\(\)&!}{\[\]|,]'),
     ('number', r'(:?\d*\.)?\d+'),
-    ('string', r':?\"+\w+\"')
-)
-
+    ('string', r':?\"+[\w\s]+\"'))
 
 regex = re.compile('|'.join(
     "(?P<%s>%s)" % t for t in rules))
@@ -53,16 +50,20 @@ class Token():
         return "(%s, %s)" % (self.id, self.value)
 
 
+
 def lexer (program):
 
-    """Return token list of <program>
+    """Generate instance(Token).See toke_list and debugging comments.
     """
 
-    token_list = []
+    #token_list = [] #only for debugging
 
     module = Token("Module", "Module", -1)
-    token_list.append(module) 
-    i = 0 # position
+    
+    yield module
+    #token_list.append(module) #only for debugging
+    
+    i = 0
 
     def error_handling ():
         # !!! modificar, añadir linea y corregir la cadena de salida
@@ -71,43 +72,40 @@ def lexer (program):
         print (pointer)
         raise SyntaxError("Unexpected character at position %d: `%s`" % (i+1, program[i]))
 
-    for m in regex.finditer(program):
+
+    for t in regex.finditer(program):
        
-        pos = m.start()
+        pos = t.start()
         
         if pos > i:
             error_handling()
 
-        i = m.end()
-        name = m.lastgroup
+        i = t.end()
+        name = t.lastgroup
 
         if name == "other":
             continue
-
-        elif name == "stmt":
-            id = "%s" % name
-            token = Token(id, m.group(0), pos)
         else:
             id = "%s" % name
-            token = Token(id, m.group(0), pos)
+            token = Token(id, t.group(0), pos)
         
-        token_list.append(token)
-        # yield token
-
+        yield token 
+        #token_list.append(token) #only for debugging
 
     if i < len(program):
         error_handling()
 
-
     end = Token("(end)", "(end)", pos+1)
-    token_list.append(end)
-    return token_list
+    
+    yield end 
+    #token_list.append(end) #only for debugging
+    #return token_list #only for debugging
 
 
 
 def console ():
 
-    """Interactive console for testing.
+    """Interactive console for testing. Must change lexer's code, see debugging comments.
     -- commands:
         exit
         clear
@@ -144,7 +142,7 @@ if "--test" in sys.argv:
     measure = []
     for i in range(1000):
         start = time.time()
-        lexer(program) # real result with print (lexer(program))
+        print (lexer(program)) # real result with:  print(lexer(program))
         end = time.time()
         measure.append(end-start)
 
@@ -161,28 +159,5 @@ if "--test" in sys.argv:
     print ("how better? =",float(py_time/sqy_time),"times")
     exit()
 
-
-if "--txt" in sys.argv:
-
-    """Test lexer with input.txt
-    """
-    f = open("code.txt")
-    program = f.read()
-    f.close()
-    program = program.replace("\n","\\n")
-    program = program.replace("\t","\\t")
-    print (program,"\n",lexer (program),"\n")
-
-
-def main ():
-    expr = input (">> ")
-    tl = lexer (expr)
-    print (tl,"\n")
-    for token in tl:
-        print (token,"\tid:",token.id,"\tval:",token.value,"\tpos:",token.pos)
-
-
-if __name__ == "__main__":
-    main()
 
     
