@@ -1,7 +1,6 @@
-# Squanchy Tutorial Index
+## Squanchy Tutorial Index
 ---
-
-[About Squanchy](../readme.md)
+[About Squanchy](Squanchy-PL/readme.md)
 
 [0. Getting Started](0_start.md)
 
