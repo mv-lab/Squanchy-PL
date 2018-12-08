@@ -12,11 +12,23 @@ Squanchy is a brand new, easy to learn, general purpose, multi-paradigm, high pe
 
 Work on the language began on September, 2018.
 The language is written from scratch (it includes an integrated lexer, parser and interpreter, etc.).
-This project is licensed under the GNU General Public License v3.0 - see the [LICENSE.md](LICENSE.md) file for details
+
+#### This project is licensed under the GNU General Public License v3.0 - see the [LICENSE.md](LICENSE.md) file for details
 
 ## Guide
 __If you want to program in Squanchy now, see the [tutorials](tutorials/index.md) for how to get started.__
 Yes, there are no tutorials by the way
+
+### Getting Started
+
+Force us to let you download it. Then ...
+
+```
+python3 parser.py --in
+```
+
+This is only an example
+
 
 ## Current State
 The features that are currently implemented are as follows:
@@ -38,16 +50,6 @@ The following features are coming soon:
 * Dictionaries
 * ...
 
-### Getting Started
-
-Force us to let you download it. Then ...
-
-```
-python3 parser.py --in
-```
-
-This is only an example
-
 
 ## Contributing
 You can email your suggestion to squanchy@wedontgiveafuck.com.
@@ -55,7 +57,6 @@ You can email your suggestion to squanchy@wedontgiveafuck.com.
 ## Built With
 
 * [Python3.0](https://www.python.org/download/releases/3.0/) 
-
 
 ## References
 
