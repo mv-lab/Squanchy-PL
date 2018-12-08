@@ -1,5 +1,5 @@
 # Squanchy Programming Language
-**_Bastard son of Python and Haskell._**
+**_Bastard son of Python and Haskell, and failed Scratch_**
 
 <img src="https://user-images.githubusercontent.com/37480508/49680121-89914100-fa91-11e8-9aa7-3956d855173f.png" width="15%"></img>
 
@@ -52,7 +52,7 @@ The following features are coming soon:
 
 
 ## Contributing
-You can email your suggestion to squanchy@wedontgiveafuck.com.
+You can email your suggestions to squanchy@wedontgiveafuck.com.
 
 ## Built With
 
