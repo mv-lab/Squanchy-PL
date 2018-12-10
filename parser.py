@@ -37,7 +37,7 @@ names_map = {"+":"Add","-":"Sub","*":"Mul","/":"Div",
         "**":"Power","%":"Mod","and":"And","or":"Or",
         "&":"Bitand","^":"Bitxor",
         "<<":"LeftShift",">>":"RightSift","lambda":"Lambda",
-        "if":"IfExp","[":"List",":":"Assign","(":"LP",")":"RP"}
+        "if":"IfExp","[":"List",":":"Assign",".":"Access"}
 
 
 
@@ -139,6 +139,7 @@ def new_space ():
 
 SCOPE = Scope()
 
+
 #--------------------------------------------------------------------------------------------
 
 def symbol(id, bp=0):
@@ -170,11 +171,6 @@ def symbol(id, bp=0):
 
             lbp = bp
             value = id
-            
-            if id == "Name" or id == "Const":
-                arity = 0
-            else:
-                arity=2
 
 
             def __init__ (self):
@@ -189,23 +185,20 @@ def symbol(id, bp=0):
 
             def nud (self):
                 """Default nud method.
+                Check prefix
                 """
-
-                print ("me cago en la puta como salga esto")
+                print ("si sale esto, es malo",token)
                 raise SyntaxError("Syntax error (%r)." % self.id)
+
 
             def led (self,left):
 
-                """Defaulr led method.
+                """Default led method.
                 Check infix and infix_r.
                 """
+                print ("si sale esto, es malo",token)
+                raise SyntaxError("Syntax error (%r)." % self.id)
 
-                self.first = left
-                if self.id in ["**","or","and",":"]: # left asociative operators
-                    self.second = parse(bp-1)
-                else:
-                    self.second = parse(bp)
-                return self
 
             def __repr__(self):
                                
@@ -249,7 +242,7 @@ def advance (id=None):
 
 def ignore (id=None):
 
-    """Advance mod. Ignores token <id>.
+    """advance MOD. Ignores token <id>, advance until sees token different than <id>
     """
 
     global token
@@ -260,7 +253,7 @@ def ignore (id=None):
 
 def add_method(symbol_class):
 
-    """Decorator. Add <fn> as symbol_class method.
+    """Decorator. Add <fn> as <symbol_class> method, if <symbol_class> exists.
     """
     assert symbol_class in symbol_table.values()
     def new_method(fn):
@@ -295,7 +288,8 @@ symbol("!=", 60); symbol("=", 60) # "different" and "equal" symbols
 symbol("global",1000)
 
 # Lists
-symbol("]"); symbol("[", 150);
+symbol("[", 150);symbol("]")
+symbol(".",150) #index
 
 # Parentheses and Tuples
 symbol("(", 150);symbol(")");symbol(",")
@@ -304,9 +298,9 @@ symbol("(", 150);symbol(")");symbol(",")
 symbol("::"); symbol("->")
 symbol(":",10)
 symbol("|")
-
-symbol("while")
-symbol("if", 20); symbol("else"); symbol("then",5)
+symbol("lambda",20)
+symbol("while",20)
+symbol("if", 20); symbol("then",15); symbol("else")
 
 symbol(")"); symbol(",")
 symbol("}");symbol("{"); symbol(",");symbol(":");symbol(";") #symbol(" ")
@@ -315,28 +309,23 @@ symbol("\\n\\t"); symbol("\\n") ; symbol("\\t")
 symbol("Module")
 
 
+
 #--------------------------------------------------------------------------------------------
 # Add NUD and LED methods to each symbol using decorator <add_method> (if necessary)
-# Remember each symbol has his own class with default atributtes and methods, 
+# Remember each symbol has his own class with default atributtes and methods created above
 # so we may have to change them.
 
 
 symbol("Const").nud = lambda self: self
-
+#symbol("Const").solve = lambda self: self.value
 
 """
-def nud (self):
-    pass
-"""
-
 @add_method(symbol("Name"))
 def nud (self):
 
     #print (SCOPE)
     if self.value not in SCOPE.names:
         return self
-    
-
     else:
         # FunCall
         self.name = self.id = "FunCall"
@@ -344,10 +333,11 @@ def nud (self):
         print ("arg:",self.first)
         advance()
         return self
-
+"""
 symbol("Name").nud = lambda self: self # !!!
 
 
+# OPERATORS
 
 def prefix(id, bp):
     """
@@ -361,19 +351,61 @@ def prefix(id, bp):
     def nud(self):
         self.first = parse(bp)
         self.name = names[self.id]
+        self.solve = self.first
         self.arity = 1
         return self
 
 prefix("+", 130); prefix("-", 130); prefix("not", 50)
 
 
+def infix(id):
+    @add_method(symbol(id))
+    def led(self, left):
+        self.first = left
+        self.second = parse(self.lbp)
+        #self.solve = 0;
+        self.arity = 2
+        return self
+
+
+infix("+"); infix("-")
+infix("*"); infix("/")
+infix("%");
+infix("<<"); infix(">>")
+infix("<"); infix("<=")
+infix(">"); infix(">=")
+infix("!="); infix("=") 
+
+
+# special infix case: right associative
+def infix_r(id):
+    @add_method(symbol(id))
+    def led(self, left):
+        self.first = left
+        self.second = parse(self.lbp-1) # solves right associative
+        self.arity = 2
+        return self
+
+infix_r("**"); infix_r("or"); infix_r("and")
+
+
+def assigment (self,left):
+    self.first = left;
+    self.second = parse(9)
+    self.arity = 2
+    return self
+symbol(":").led = assigment
+
+# as in javascript --> a : suma(a,b) -> a+b | a = function{...}
+# ?? limitarlo
+
+
 #--------------------------------------------------------------------------------------------
-# CONSTANTS -> symbol = "global"
 
 def constant(id,value):
     @add_method(symbol(id))
     def nud(self):
-        self.id = "Const"
+        self.id = self.name = "Const"
         self.value = value
         SCOPE.new(id,value)
         return self
@@ -383,20 +415,33 @@ constant("True",1)
 constant("False",0)
 constant("pi", 3.141592653589793)
 
-# user | global expr -> ex) global X=5 O global X
+
+# global Name -> accessible from any SCOPE
 @add_method(symbol("global"))
 def nud (self):
     self.first = token # var
+    advance()
+    """
     advance("Name")
     self.second = token # value
     advance ("Const")
     constant(self.first.value,self.second)
+    """
     return self
+
+
+# <Name> :: <statement> -> changeless and accessible from any SCOPE
+# sample: a :: 5 -> constant a 
+# sample: a :: { elem1: int, elem2: Dub, elem3:string}  -> structure a 
+
+@add_method(symbol("::"))
+def led (self,left):
+    pass
+
 
 #--------------------------------------------------------------------------------------------
 # LISTS
-
-#!!! tipos -> prueba = [a+b 1 2 3]
+# expression_list ::=  [expressions...]
 
 @add_method(symbol("["))
 def nud(self):
@@ -406,10 +451,14 @@ def nud(self):
             ignore("\\n") # !! cuanto permito??
             ignore("\\n\\t")
             ignore("\\t")
-            assert token.id == "Const"
-            lista.append(token)
-            advance()
-            if token.id == "]":break
+            #assert token.id == "Const"
+            #lista.append(token)
+            #advance()
+            #if token.id == "]":break
+            lista.append(parse()) # check parse is an expression
+            if token.id != ",": break
+            advance(",")
+
     advance("]")
     self.first = lista
     self.arity = 1
@@ -417,16 +466,12 @@ def nud(self):
     return self
 
 #--------------------------------------------------------------------------------------------
-# TUPLES and Parenthesized Expressions
-# () error
-# (1) is a parenthesized expression
-# (1 2) is a tuple
-
+# TUPLES
+# expression_tuple ::=  (expressions...)
 
 @add_method(symbol("("))
 def nud(self):
     self.first = []
-    comma = False
     if token.id != ")":
         while 1:
             if token.id == ")":
@@ -435,39 +480,61 @@ def nud(self):
             self.first.append(parse())
             if token.id != ",":
                 break
-            comma = True
             advance(",")
     advance(")")
-    if not self.first or comma:
+
+    if len(self.first) > 1:
+        self.name = "Tuple"
         return self # tuple
+    elif len(self.first) == 1:
+        return self.first[0] # expr
     else:
-        return self.first[0]
+        raise SyntaxError ("Bad Tuple")
+
 
 #--------------------------------------------------------------------------------------------
-# !!!
-# LAMBDA FUNCTION
-# by: http://effbot.org/zone/simple-top-down-parsing.htm
+# Item access. INDEX
 
-symbol("lambda",20)
+# expression_access ::= (List|Tuple).Const
+# !!! list,tuples,dic & types
+
+@add_method(symbol("."))
+def led(self, left):
+    if token.id != "Const":
+        SyntaxError("Expected numeric index.")
+    self.first = left
+    self.second = token
+    advance()
+    return self
+
+
+
+#--------------------------------------------------------------------------------------------
+# LAMBDA FUNCTION
+
+# lambda [parameter_list]:: expression
+# lambda [parameter_list]:: expression_nocond
+
 
 @add_method(symbol("lambda"))
 def nud(self):
-    self.first = []
-    if token.id != ":":
-        argument_list(self.first)
-    advance(":")
-    self.second = parse()
+    self.first = [] # arg
+    if token.id != "::":
+        parameter_list(self.first)
+    if len(self.first )==0:
+        raise SyntaxError ("Bad lambda, no arguments")
+    advance("::")
+    self.second = parse() # expr
     return self
 
-def argument_list(list):
+
+def parameter_list(list):
     while 1:
         if token.id != "Name":
-            SyntaxError("Expected an argument name.")
+            SyntaxError("Expected an parameter name.")
         list.append(token)
         advance()
-        if token.id != ",":
-            break
-        advance(",")
+        if token.id == "::": break
 
 
 #--------------------------------------------------------------------------------------------
@@ -559,6 +626,12 @@ def nud (self):
 #--------------------------------------------------------------------------------------------
 # FUNCTION CALLS & FUNCTION DECLARATION
 
+"""
+FUNCTION_SKELETON =
+    {name} {args} -> {return} ::{body}
+"""
+
+
 @add_method(symbol("("))
 def led(self,left):
 
@@ -625,7 +698,6 @@ suma (4,5) -> 9
 @add_method(symbol("while"))
 def nud (self):
     self.first = parse()
-    print (self.first)
     self.second = block("::")
     self.arity = "statement"
     self.name = "While_stmt"
@@ -822,7 +894,7 @@ if "--in" in sys.argv:
     """Test input
     """
 
-    f = open("code.txt")
+    f = open("code.sqy")
     program = f.read()
     f.close()
 
