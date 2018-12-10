@@ -17,15 +17,15 @@ That's it. Just save that as a normal text file with the extension `.sqy` and ru
 
 ## Primitive Types
 
-*__Int__  is the same as an int in C. It can hold positive and negative whole numbers. The other two primitive data types are Double and List.
+__Int__  is the same as an int in C. It can hold positive and negative whole numbers. The other two primitive data types are Double and List.
 
-*__Double__ is the same as a C Double.
+__Double__ is the same as a C Double.
 
-*__List__ is the same as a Python or Haskell list.
+__List__ is the same as a Python or Haskell list.
 
-*__Bool__ can only be `1` or `0` like C, so in fact is __Int__. We have keywords `True` and `False`.
+__Bool__ can only be `1` or `0` like C, so in fact is __Int__. We have keywords `True` and `False`.
 
-*__String__ isn't really a primitive data type, it is a __List__ of letters, numbers or other characters of any length, as in Haskell.
+__String__ isn't really a primitive data type, it is a __List__ of letters, numbers or other characters of any length, as in Haskell.
 
 
 ## Operators
