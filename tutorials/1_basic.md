@@ -81,7 +81,7 @@ foo : suma (a,b) -> a+b
 
 ## Lists
 
-Based on Haskell and Python. To construct one you don't need commas !. Elements can be accesed with the `.` operator as __Tuples__. Here is an example:
+Based on Haskell.The square brackets delimit the list, and individual elements are separated by commas. There isn't type restrictions, but elements can't be  expressions, must be literals from any primitive type. Elements can be accesed with the `.` operator as __Tuples__. Here is an example:
 
 In Haskell:
 
@@ -94,11 +94,17 @@ let strings = ["here", "are", "some", "strings"]
 Squanchy:
 
 ```
-list : [1 2 3 4 5 "hello"]
+numbers : [1,2,3,4]
+truths  : [True,False,False]
+strings : ["here","are","some","strings"]
 
-mylist : [12 45463 1.56 "hello"
-		45 35 57]
+list : [1,2,3,4,5,"hello"]
 
+list_of_list : [1,2,3,[1,2,3]]
+
+mylist : [12,45463,1.56,"hello",
+		45,35,57]
+		
 print: mylist.0
 print: mylist.3
 
@@ -140,7 +146,8 @@ The output of this will be
 Tuples within tuples (and other combinations):
 ```
 ((2,3), True)
-((2,3), [2 3])
+((2,3), [2,3])
+[(1,2), (3,4), (5,6)]
 ```
 
 
