@@ -62,7 +62,7 @@ A __variable__ is a place you can store a value, string, list, function (as in j
 ```
 myVarName: 78
 myVarName: "hello"
-myList: [1 2 3 4 5.6 "hi!" 23]
+myList: [1,2,3,4,5.6,"hi!",23]
 myTuple : (a,b,c)
 ```
 
@@ -81,7 +81,7 @@ foo : suma (a,b) -> a+b
 
 ## Lists
 
-Based on Haskell.The square brackets delimit the list, and individual elements are separated by commas. There isn't type restrictions, but elements can't be  expressions, must be literals from any primitive type. Elements can be accesed with the `.` operator as __Tuples__. Here is an example:
+Based on Haskell.The square brackets delimit the list, and individual elements are separated by commas. There isn't type restrictions, but elements can't be  expressions, must be literals from any primitive type. Elements can be accesed with the `.` operator.  Here is an example:
 
 In Haskell:
 
@@ -117,7 +117,7 @@ The output of this will be
 
 ## Tuples
 
-Based on haskell. To construct one you simple combine several expressions with commas. The names of the elements of a tuple are `1`, `2`, etc. Elements can be accesed with the `.` operator. Here is an example:
+Based on haskell. To construct one you simple combine several expressions with commas. Elements can be accesed with the `.` operator as __List__. Here is an example:
 
 From [Haskell](https://en.wikibooks.org/wiki/Haskell/Lists_and_tuples).
 > Tuples have a fixed number of elements (immutable); you can't cons to a tuple. Therefore, it makes sense to use tuples when you know in advance how many values are to be stored. For example, we might want a type for storing 2D coordinates of a point. We know exactly how many values we need for each point (two – the x and y coordinates), so tuples are applicable.
@@ -151,25 +151,47 @@ Tuples within tuples (and other combinations):
 ```
 
 
-## !!! Constants (@deprecated)
+## Global and Constants
 
-A __constant__ is a value that is determined at compile time. Constants are created with the constants assignment operator `global`. You can declare constants as follows: `global var_name value ` . Here is an example of a simple use of constants:
+Squanchy handles local (function) and global (module) namespaces.
+
+A __global__ variable can be accessible from any Scope/Namespace. A global variable is not the same as a variable allocated on global scope . You can declare global variables by explicitly using the `global` keyword as follows: `global var_name` . Here is an example of a simple use:
 
 ```
-global a 5
-global b 10
-global pi 3.141592653589793
-global c "hello world"
-print (a+b)
-print (c)
+global a 
+a : 5
+inc (x) -> x+a
+print (inc (5))
+print (a)
 ```
 The output of this will be
 ```
-> 15
-> "hello world"
+> 10
+> 5
 ```
 
-a,b,c are no longer `Names`, now are `Constants`. Variable pi is now constant 3.141592653589793
+A global variable can only store literals (primitive types).
+
+
+A __constant__ is a value that is determined at compile time,is changeless and accessible from any Scope-Namespace. Constants are created with the constants assignment operator `::`. Here is an example of a simple use and declaration:
+
+```
+a :: 5
+print (a)
+inc (x) -> x+a
+print (inc (5))
+
+a: 10
+
+```
+The output of this will be
+```
+> 5
+> 10
+> error
+```
+
+In this case `a` is no longer a `Name`, now is `Const`.
 
 
 ## Comments
