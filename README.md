@@ -15,6 +15,31 @@ The language is written from scratch (it includes an integrated lexer, parser an
 
 #### This project is licensed under the GNU General Public License v3.0 - see the [LICENSE.md](LICENSE.md) file for details
 
+
+## Example
+Here is Fibonacci demo program written in Haskell and Squanchy. You can see code example in the [example](example.md) or the [tutorials](tutorials/index.md).
+
+```haskell
+
+fib x
+  | x < 2 = 1
+  | otherwise = fib (x - 1) + fib (x - 2)
+
+
+fib 1 = 1
+fib 2 = 2
+fib x = fib (x - 1) + fib (x - 2)
+
+```
+Squanchy:
+
+```
+fib (1) -> 1
+fib (2) -> 2
+fib(x) -> fib(x-1) + fib(x-2)
+```
+
+
 ## Guide
 __If you want to program in Squanchy now, see the [tutorials](tutorials/index.md) for how to get started.__
 Yes, there are no tutorials by the way
