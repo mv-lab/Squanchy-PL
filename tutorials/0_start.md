@@ -8,5 +8,5 @@ Disclamer: these steps work on Linux, and usually on OSX. Windows is not yet sup
 4. coming next week
 99. If it works, you can now move on to the "basic concepts" tutorial
 
-[index](index.md) | [next: Basic Concepts ->](/1_basic_concepts.md)
+[index](index.md) | [next: Basic Concepts ->](1_basic.md)
 
