@@ -14,7 +14,11 @@ Work on the language began on September, 2018.
 The language is written from scratch (it includes an integrated lexer, parser and interpreter, etc.).
 
 #### This project is licensed under the GNU General Public License v3.0 - see the [LICENSE.md](LICENSE.md) file for details
+#### Built With
 
+* [Python3.0](https://www.python.org/download/releases/3.0/) 
+
+---
 
 ## Getting Started
 
@@ -70,14 +74,11 @@ The following features are coming soon:
 * ...
 
 
-## Contributing
+### Contributing
 You can email your suggestions to squanchy@wedontgiveafuck.com.
 
-## Built With
 
-* [Python3.0](https://www.python.org/download/releases/3.0/) 
-
-
+---
 
 ## Bibliography
 
@@ -95,7 +96,7 @@ You can email your suggestions to squanchy@wedontgiveafuck.com.
 - [Eiben Github ](https://gist.github.com/eliben/5797351)
 - [Parsing In Python: Tools And Libraries](https://tomassetti.me/parsing-in-python/)
 
-## Parser
+### Parser
 
 Pratt Parser implementation.
 
@@ -113,7 +114,7 @@ Analyzer and Parser Generation for NextGen Languages](https://pdfs.semanticschol
 - [Parsing text with Python](https://www.vipinajayakumar.com/parsing-text-with-python/)
 
 
-## Interpreter and Code generation
+### Interpreter and Code generation
 
 - [Compiler Design | Intermediate Code Generation](https://www.geeksforgeeks.org/intermediate-code-generation-in-compiler-design/)
 - [Compilers Algorithms](http://www.softpanorama.org/Algorithms/compilers.shtml)
