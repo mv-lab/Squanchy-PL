@@ -27,13 +27,16 @@ import time
 from statistics import mean 
 
 
+# REGEX
+
 rules = (
     ('stmt', r'\\n\\t|\\n|\\t'),
     ('other',r'\s+|;'),
     ('Name', r'[a-zA-Z_][\w_]*'),
-    ('operator', r'(<=|>=|<<|>>|!=|==|<>|::|<-|->|\*\*)|[:=+\-*%/\^<>\(\)&!}{\[\]|,]'),
+    ('operator', r'(<=|>=|<<|>>|!=|==|<>|::|<-|@|->|\*\*)|[:=+\-*%/\^<>\(\)&!}{\[\]|,.]'),
     ('number', r'(:?\d*\.)?\d+'),
-    ('string', r':?\"+[\w\s]+\"'))
+    ('string', r':?\"+[\w\s\W]+?\"'),
+    ('cmt',r':?#+[\w\s\W]+?#'))
 
 regex = re.compile('|'.join(
     "(?P<%s>%s)" % t for t in rules))
@@ -50,27 +53,42 @@ class Token():
         return "(%s, %s)" % (self.id, self.value)
 
 
+class TokenError(Exception):
+    pass
+
+class CmtError(Exception):
+    pass
+
+class StrError(Exception):
+    pass
+
+
 
 def lexer (program):
 
-    """Generate instance(Token).See toke_list and debugging comments.
+    """Generator. Generate instance(Token).See token_list and debugging comments.
     """
-
-    #token_list = [] #only for debugging
 
     module = Token("Module", "Module", -1)
     
     yield module
+    #token_list = [] #only for debugging
     #token_list.append(module) #only for debugging
     
     i = 0
 
     def error_handling ():
         # !!! modificar, añadir linea y corregir la cadena de salida
-        error_position = i+1
-        pointer = program+"\n"+("-"*(i))+"^"
+
+        pointer = program[:i+1]+"\n"+("-"*(len(program[:i+1])-1))+"^"
         print (pointer)
-        raise SyntaxError("Unexpected character at position %d: `%s`" % (i+1, program[i]))
+
+        if program[i] == "#" :
+            raise CmtError("Comment Error.Start comment at position %d but missing enclose # " % (i+1))
+        if program[i] == '"' : 
+            raise StrError('String Error.Start string at position %d but missing enclose "' % (i+1))
+        else: 
+            raise TokenError("Unexpected character at position %d: `%s`" % (i+1, program[i]))
 
 
     for t in regex.finditer(program):
@@ -83,7 +101,7 @@ def lexer (program):
         i = t.end()
         name = t.lastgroup
 
-        if name == "other":
+        if name == "other" or name == "cmt":
             continue
         else:
             id = "%s" % name
@@ -102,7 +120,6 @@ def lexer (program):
     #return token_list #only for debugging
 
 
-
 def console ():
 
     """Interactive console for testing. Must change lexer's code, see debugging comments.
@@ -111,21 +128,26 @@ def console ():
         clear
     """
 
-    print ("Squanchy PL Lexer Test")
-    print ("v1.0\n")
-    
-    while True:
+    try:
+        while True:
 
-        expr = input (">> ")
-        
-        if expr == "exit": exit()
-        if expr == "clear": 
-            os.system('clear')
-            console()
-        print (lexer(expr))
+            expr = input (">> ")
+            
+            if expr == "exit": exit()
+            if expr == "clear": 
+                os.system('clear')
+                console()
+            print (lexer(expr))
+
+    except SyntaxError:
+        print ("ERROR")
+        console()
 
 
 if "--console" in sys.argv:
+
+    print ("Squanchy PL Lexer Test")
+    print ("v1.0\n")
     console()
 
 
@@ -134,30 +156,44 @@ if "--test" in sys.argv:
     """Benchmark. SQY Lexer vs Python's tokenize module.
     Same code written in SQY and Python: <code.txt> <code_py.txt>
     """
+    factor = 5
 
-    program = open("code.txt").read()
-    program = program.replace("\n","\\n") # !!! mirar si se puede cambiar
-    program = program.replace("\t","\\t")
+    #program = open("code.txt").read()
+    #program = program.replace("\n","\\n") # !!! mirar si se puede cambiar
+    #program = program.replace("\t","\\t")
+    
+    program = '+1+1+1+1+1+1+1+1+1+1'*10
 
-    measure = []
-    for i in range(1000):
-        start = time.time()
-        print (lexer(program)) # real result with:  print(lexer(program))
-        end = time.time()
-        measure.append(end-start)
+    measureSQY = []
+    for i in range(factor):
+        measureSQY.append([])
+        for j in range(1000):
+            start = time.time()
+            print (lexer(program)) # real result with:  print(lexer(program))
+            #lexer(program)
+            end = time.time()
+            measureSQY[i].append(end-start)
+        program *= 10
 
-    start = time.time()
-    os.system("python -m tokenize code_py.txt")
-    end = time.time()
+    measurePY = []
+    program = program0
+    for i in range(factor):
+        measurePY.append([])
+        progfile = open("code_py.txt","w")
+        progfile.write(program)
 
-    sqy_time = mean(measure)
-    py_time = float(end-start)
+        for j in range(1000):
+            start = time.time()
+            os.system("python -m tokenize code_py.txt")
+            end = time.time()
+            measurePY[i].append(float(end-start))
+        program *= 10
+
+    sqy_time = list(map(lambda x: mean(x), measureSQY))
+    py_time = list(map(lambda x: mean(x), measurePY))
 
     # compare times
     print ("sqy time >>",sqy_time)
     print ("py time >>",py_time)
-    print ("how better? =",float(py_time/sqy_time),"times")
+    print ("how better? =", list(map(lambda x,y: float(x/y), py_time, sqy_time)),"times")
     exit()
-
-
-    
