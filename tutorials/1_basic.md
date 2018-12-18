@@ -105,8 +105,15 @@ list_of_list : [1,2,3,[1,2,3]]
 mylist : [12,45463,1.56,"hello",
 		45,35,57]
 		
-print: mylist.0
-print: mylist.3
+print (mylist.0)
+print (mylist.3)
+
+multiline_list : [
+	a,b,c,
+	d,e,f,
+	1,2,3,
+	"hi!",5.76,True
+]
 
 ```
 The output of this will be
@@ -134,8 +141,8 @@ Squanchy
 ```
 my_Tuple: ("Hello world", False)
 my_tuple : (1,"hello",5.6)
-print: myTuple.3
-print: myTuple.1
+print (myTuple.3)
+print (myTuple.1)
 ```
 The output of this will be
 ```
@@ -155,28 +162,27 @@ Tuples within tuples (and other combinations):
 
 Squanchy handles local (function) and global (module) namespaces.
 
-A __global__ variable can be accessible from any Scope/Namespace. A global variable is not the same as a variable allocated on global scope . You can declare global variables by explicitly using the `global` keyword as follows: `global var_name` . Here is an example of a simple use:
+A __global__ variable can be accessible (read & write) from any Scope/Namespace. A global variable is not the same as a variable allocated on global scope . You can declare global variables by explicitly using the `global` keyword as follows: `global var_name` . Here is an example of a simple use:
 
 ```
 global a 
 a : 5
-inc (x) -> x+a
-print (inc (5))
+inc (x) -> a:x+a
+inc (5)
 print (a)
 ```
 The output of this will be
 ```
 > 10
-> 5
 ```
 
 A global variable can only store literals (primitive types).
 
 
-A __constant__ is a value that is determined at compile time,is changeless and accessible from any Scope-Namespace. Constants are created with the constants assignment operator `::`. Here is an example of a simple use and declaration:
+A __constant__ is a value that is determined at compile time,is changeless and accessible from any Scope-Namespace. Constants are created with the constants assignment operator `:=`. Here is an example of a simple use and declaration:
 
 ```
-a :: 5
+a := 5
 print (a)
 inc (x) -> x+a
 print (inc (5))
@@ -196,8 +202,14 @@ In this case `a` is no longer a `Name`, now is `Const`.
 
 ## Comments
 
-__coming soon__
-Comments are parts of your program that the compiler doesn't look at, so you can write notes and whatnot. In Squanchy, single-line comments start with a `--`. Multi-line comments start with `//` and end with `\\`.
+Comment is a programmer-readable explanation or annotation in the source code of a computer program that the compiler doesn't look at. In Squanchy, single-line comments and multi-line comments are exactly the same, both start with `#` and end with `#`.
 
+
+```
+# simple comment #
+
+# multiline
+comment #
+```
 
 [index](index.md) | [next: Control Flow ->](2_control_flow.md)
