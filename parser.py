@@ -299,7 +299,7 @@ symbol("::"); symbol("->")
 symbol(":",10)
 symbol("|")
 symbol("lambda",20)
-symbol("while",20)
+symbol("@",20)
 symbol("if", 20); symbol("then",15); symbol("else")
 
 symbol(")"); symbol(",")
@@ -391,13 +391,10 @@ infix_r("**"); infix_r("or"); infix_r("and")
 
 def assigment (self,left):
     self.first = left;
-    self.second = parse(9)
+    self.second = parse(self.lbp-1)
     self.arity = 2
     return self
 symbol(":").led = assigment
-
-# as in javascript --> a : suma(a,b) -> a+b | a = function{...}
-# ?? limitarlo
 
 
 #--------------------------------------------------------------------------------------------
@@ -436,7 +433,10 @@ def nud (self):
 
 @add_method(symbol("::"))
 def led (self,left):
-    pass
+    print (left)
+    self.first = left
+    self.second = parse(10)
+    return self
 
 
 #--------------------------------------------------------------------------------------------
@@ -445,22 +445,21 @@ def led (self,left):
 
 @add_method(symbol("["))
 def nud(self):
-    lista = []
+    self.first = []
     if token.id != "]":
         while 1:
             ignore("\\n") # !! cuanto permito??
             ignore("\\n\\t")
             ignore("\\t")
             #assert token.id == "Const"
-            #lista.append(token)
+            #self.first.append(token)
             #advance()
             #if token.id == "]":break
-            lista.append(parse()) # check parse is an expression
+            self.first.append(parse()) # check parse is an expression
             if token.id != ",": break
             advance(",")
 
     advance("]")
-    self.first = lista
     self.arity = 1
     self.name = "List"
     return self
@@ -524,14 +523,14 @@ def nud(self):
     if len(self.first )==0:
         raise SyntaxError ("Bad lambda, no arguments")
     advance("::")
-    self.second = parse() # expr
+    self.second = parse() # tiene que ser una expression
     return self
 
 
 def parameter_list(list):
     while 1:
         if token.id != "Name":
-            SyntaxError("Expected an parameter name.")
+            SyntaxError("Expected a parameter Name.")
         list.append(token)
         advance()
         if token.id == "::": break
@@ -553,14 +552,8 @@ empty:
 
 def statement (end_stmt,end_block):
 
-    """Parses one statement. Si el token tiene un método std se llama al método,
-    en otro caso se trata de una expresión, una linea que termina en ";".
-
-    -- ?? Error: si el statement no es una asignacion o una funcall.
-
+    """Parsea un statement hasta llegar a <end_stmt> o <end_block>
     """
-	
-    #print (">>",token)
 
     if (token.arity == "statement"):
         advance()
@@ -569,13 +562,9 @@ def statement (end_stmt,end_block):
 
     expr = parse()
 
-    #print ("!!!! statement",token)
 
-    if token.id in end_block:
-        pass
-
-    elif token.id in end_stmt:
-        advance(token.id)
+    if token.id in end_block: pass
+    elif token.id in end_stmt: advance(token.id)
     else:
         raise SyntaxError ("Expected %r" % end_stmt)
 
@@ -585,18 +574,16 @@ def statement (end_stmt,end_block):
 
 def statement_list (end_block=["\\n","(end)"], end_line= ["\\n\\t","(end)","\\n"]):
     
-    """Parses statements hasta llegar a (end) o }, que indica el fin del bloque.
+    """Parsea statements hasta llegar a <end_block>.
         Return:
             - statement
             - stmt = array of statements
             - None si no hay statement
     """
 
-    
     stmt = [] # array of statements
 
     while 1:
-        #print (">>> estoy en statements",token)
 
         if token.id in end_block :
             break
@@ -663,7 +650,14 @@ def led(self,left):
     #SCOPE.new (left.value,left.value)
     #print (SCOPE)
 
-    advance ("->")
+    try:
+        advance ("->")
+    except:
+        self.third = None   
+        self.arity = "2"
+        self.name = "FunCall"
+        self.id = self.name
+        return self
     #t = token
     #advance()
 
@@ -684,28 +678,18 @@ def led(self,left):
 
     return self
 
-"""
-suma (a,b) -> a+b
-suma (a,b) -> (c,d) :: c:a+b\n\td:a-b
-suma (a,b) -> c
-suma (4,5) -> 9
-"""
 
 #--------------------------------------------------------------------------------------------
 # WHILE statement
 
 
-@add_method(symbol("while"))
+@add_method(symbol("@"))
 def nud (self):
     self.first = parse()
     self.second = block("::")
     self.arity = "statement"
     self.name = "While_stmt"
     return self
-
-
-# while a<50 : c=a+b\n\td=4\n ->  (while (< (Name a),(Const 50)),[(Assign (Name c),(Add (Name a),(Name b))), (Assign (Name d),(Const 4))]) 
-# while a<50 ::\nc=a+b\n\td=56**7 ->  (while (< (Name a),(Const 50)),[(Assign (Name c),(Add (Name a),(Name b))), (Assign (Name d),(Power (Const 56),(Const 7)))])
 
 
 #--------------------------------------------------------------------------------------------
@@ -724,6 +708,7 @@ def nud (self):
 @add_method(symbol("if"))
 def nud(self):
     self.first = parse(20)
+    #ignore("\\n"); ignore("\\n\t")
     self.second = block("then")
 
     if token.id == "else":
@@ -736,8 +721,6 @@ def nud(self):
     self.arity = "statement"
     return self
 
-# if a<45 then n=3\n\tc=4+n\nd="hola"
-# if a<=3 then a=a+b\n\tb=45 else c=4\nd="hola"
 
 #--------------------------------------------------------------------------------------------
 # MODULE/PROGRAM statement
@@ -781,9 +764,9 @@ def tokenize(program):
     # (tokenize module). Ver symbol_table.
     """
 
-    import lexer as lex
+    from lexer import lexer
 
-    for token in lex.lexer(program):
+    for token in lexer(program):
 
     	if token.id == "number" or token.id == "string":
     		Clase_token = symbol_table["Const"]
@@ -863,22 +846,6 @@ if "--terminal" in sys.argv:
         print (ast(expr))
 
 
-if "--sample" in sys.argv:
-
-    """Show samples.
-    """
-
-    print ("\nExamples\n"+(30*"--")+"\n")
-
-    f = open("examples.txt")
-    file = f.readlines()
-    f.close()
-
-    for example in file:
-        example = example.strip()
-        print (example, "-> ",ast(example),"\n")
-
-
 if "--img" in sys.argv:
 
     """Test tree visualisation.
@@ -902,8 +869,26 @@ if "--in" in sys.argv:
 
     tree = ast(program)
     print ("\n",tree)
-    #visu.visualise(tree)
     
+
+if "--benchmark" in sys.argv:
+    factor = 5
+    program = '+1+1+1'*3
+
+    measure = []
+
+    for i in range(factor):
+        measure.append([])
+        for j in range(1000):
+            start = time.time()
+            ast(program)
+            end = time.time()
+            measure[i].append(float(end-start))
+        program = ((program + '+')*10)[:-1]
+
+    print("Time: ", list(map(lambda x: mean(x), measure)))
+
+
 
 
 def main():
