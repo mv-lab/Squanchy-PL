@@ -7,7 +7,7 @@
 ## About
 Squanchy is a brand new, easy to learn, general purpose, multi-paradigm, high performance programming language created by:
 
-* **Marcos V. Conde**  [Jesucrist0](https://github.com/Jesucrist0)
+* **Marcos V. Conde Osorio**  [Jesucrist0](https://github.com/Jesucrist0)
 * **Gabriel Rodríguez Canal**  [gabrielrodcanal](https://github.com/gabrielrodcanal)
 
 Work on the language began on September, 2018.
@@ -22,7 +22,7 @@ The language is written from scratch (it includes an integrated lexer, parser an
 
 ## Getting Started
 
-Here is Fibonacci demo program written in Haskell and Squanchy. You can see code example in the [example](example.md).
+Here is Fibonacci demo program written in Haskell and Squanchy. You can see more code example in [example](example.md).
 
 ```haskell
 
@@ -59,30 +59,29 @@ The features that are currently implemented are as follows:
 * Primitive data types `List`,`String`, `Int` and `Double`
 * Operators (`+`,`-`, `*`,`/`,`**`, `%`, `:`, `=`, `>`, `<=`, `and`,`or`, etc.)
 * Flow control (if/the/else, while loop)
-* Constants
-* Tuples
+* Constants and global variables
+* Lists, Tuples and access
 * Functions
 * Lambda
 
 The following features are coming soon:
 
-* Single and multi line comments
-* Flow control (if, for)
+* Flow control (ternary ?, for)
 * Data structs
-* String operations
 * Dictionaries
+* array
 * ...
 
 
 ### Contributing
-You can email your suggestions to squanchy@wedontgiveafuck.com.
+**Not yet.**
 
 
 ---
 
 ## Bibliography
 
-## General
+### General
 
 - [The Python Language Reference](https://docs.python.org/3.3/reference/index.html#reference-index)
 - [Compilers: Principles, Techniques, and Tools 2ed](https://en.wikipedia.org/wiki/Compilers:_Principles,_Techniques,_and_Tools)
