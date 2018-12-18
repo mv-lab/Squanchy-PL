@@ -1,6 +1,6 @@
 ## Squanchy Tutorial Index
 ---
-[About Squanchy](Squanchy-PL/README.md)
+[About Squanchy](../README.md)
 
 [1. Basic Concepts](1_basic.md)
 
@@ -8,7 +8,7 @@
 
 [3. Functions](3_functions.md)
 
-[4. Code Example](Squanchy-PL/example.md)
+[4. Code Example](../example.md)
 
 
 
