@@ -113,6 +113,6 @@ while a<len(lista)::
 ```
 
 
-[index](index.md) | [next: Strings and Input ->](3_functions.md)
+[index](index.md) | [next: Functions ->](3_functions.md)
 
 
