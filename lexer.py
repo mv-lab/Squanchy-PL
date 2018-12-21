@@ -33,7 +33,7 @@ rules = (
     ('stmt', r'\\n\\t|\\n|\\t'),
     ('other',r'\s+|;'),
     ('Name', r'[a-zA-Z_][\w_]*'),
-    ('operator', r'(<=|>=|<<|>>|!=|==|<>|::|<-|@|->|\*\*)|[:=+\-*%/\^<>\(\)&!}{\[\]|,.]'),
+    ('operator', r'(<=|>=|<<|>>|!=|==|:=|<>|::|<-|@|->|\*\*)|[:=+\-*%/\^<>\(\)&!}{\[\]|,.]'),
     ('number', r'(:?\d*\.)?\d+'),
     ('string', r':?\"+[\w\s\W]+?\"'),
     ('cmt',r':?#+[\w\s\W]+?#'))
@@ -117,7 +117,7 @@ def lexer (program):
     
     yield end 
     #token_list.append(end) #only for debugging
-    #return token_list #only for debugging
+    return token_list #only for debugging
 
 
 def console ():
@@ -156,38 +156,37 @@ if "--test" in sys.argv:
     """Benchmark. SQY Lexer vs Python's tokenize module.
     Same code written in SQY and Python: <code.txt> <code_py.txt>
     """
-    factor = 5
-
-    #program = open("code.txt").read()
-    #program = program.replace("\n","\\n") # !!! mirar si se puede cambiar
-    #program = program.replace("\t","\\t")
+    maxSize = 200000
+    difSize = 2000
+    iterations = int(maxSize / difSize)
     
-    program = '+1+1+1+1+1+1+1+1+1+1'*10
+    program0 = '+1+1+1+1+1'
 
     measureSQY = []
-    for i in range(factor):
+    measurePY = []
+    program = program0
+    for i in range(iterations):
         measureSQY.append([])
+        measurePY.append([])
+
+        progfile = open("code_py.txt","w")
+        progfile.write(program)
         for j in range(1000):
+            #Squanchy
             start = time.time()
             print (lexer(program)) # real result with:  print(lexer(program))
             #lexer(program)
             end = time.time()
             measureSQY[i].append(end-start)
-        program *= 10
 
-    measurePY = []
-    program = program0
-    for i in range(factor):
-        measurePY.append([])
-        progfile = open("code_py.txt","w")
-        progfile.write(program)
-
-        for j in range(1000):
+            #Python
             start = time.time()
             os.system("python -m tokenize code_py.txt")
             end = time.time()
             measurePY[i].append(float(end-start))
-        program *= 10
+
+
+        program = program0 * (i+1)
 
     sqy_time = list(map(lambda x: mean(x), measureSQY))
     py_time = list(map(lambda x: mean(x), measurePY))
