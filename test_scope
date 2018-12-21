@@ -1,0 +1,43 @@
+
+# CODE EXAMPLE IN SQUANCHY#
+# ------------------------------------------------#
+
+
+# prueba de comentario
+multilnea#
+
+
+# OPERATORS #
+
+x:y:z:8
+
+pi
+
+numbers : [1,2,3,4]
+
+numbers : [1,2,3,4]
+truths  : [True,False,False]
+strings : ["here","are","some","strings"]
+
+list : [1,2,3,4,5,"hello"]
+mylist : [12,45463,1.56,"hello",
+			45,35,57]
+
+multiline_list : [
+	a,b,c,
+	d,e,f,
+	1,2,3,
+	"hi!",5.76,True
+]
+
+list_of_list : [1,2,3,[1,2,3]]
+
+
+my_Tuple: ("Hello world", False)
+my_tuple : (1,"hello",5.6)
+
+a := 5
+b := True
+c := "constant"
+
+expr : 4+5*10/2**2+(1-2)
