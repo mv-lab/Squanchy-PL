@@ -7,8 +7,8 @@
 ## About
 Squanchy is a brand new, easy to learn, general purpose, multi-paradigm, high performance programming language created by:
 
-* **Marcos V. Conde Osorio**  [Jesucrist0](https://github.com/Jesucrist0)
-* **Gabriel Rodríguez Canal**  [gabrielrodcanal](https://github.com/gabrielrodcanal)
+* **Marcos V. Conde Osorio**  [marcond](marcosventura.conde@alumnos.uva.es)
+* **Gabriel Rodríguez Canal**  [gabrielrodcanal](gabriel.rodriguez.canal@alumnos.uva.es)
 
 Work on the language began on September, 2018.
 The language is written from scratch (it includes an integrated lexer, parser and interpreter, etc.).
