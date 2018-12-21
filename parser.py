@@ -37,7 +37,7 @@ names_map = {"+":"Add","-":"Sub","*":"Mul","/":"Div",
         "**":"Power","%":"Mod","and":"And","or":"Or",
         "&":"Bitand","^":"Bitxor",
         "<<":"LeftShift",">>":"RightSift","lambda":"Lambda",
-        "if":"IfExp","[":"List",":":"Assign",".":"Access"}
+        "if":"IfExp","[":"List",":":"Assign",".":"Access",":=":"Let","<-":"Data"}
 
 
 
@@ -70,7 +70,6 @@ class Scope:
         n.reserved = False
         name.nud = lambda self: self
         n.led = None
-        n.std = None
         n.lbp = 0
         n.space = space
         return n
@@ -83,6 +82,8 @@ class Scope:
         Además comprueba si <nombre> no esta undefined o es una funcion.
         """
 
+        return self.names[name]
+        """
         e = self
         while 1:
             o = e.names[name]
@@ -94,7 +95,7 @@ class Scope:
                 o = symbol_table[name];
                 if o.arity != "function": return o
                 else: return symbol_table["Name"] 
-
+		"""
 
     def pop (self):
 
@@ -103,7 +104,7 @@ class Scope:
         scope = self.parent
 
 
-    def reserve(self,name):
+    def reserve(self,id,value):
 
         """Indica que <nombre> se ha usado o es una palabra reservada
         en el espacio actual <self>.
@@ -112,20 +113,19 @@ class Scope:
 
         """
 
-        if (name.arity != "Name" or name.reserved):
-            return
+        #if (name.arity != "Name" or name.reserved):
+         #   return
 
-        t = self.names[name.value]
-        if t :
-            if t.reserved: return
-            if t.arity == "Name": raise NameError ("Already defined")
+        try:
+        	t = self.names[id]
+        	if t:
+        		self.names[id] = value # update value
+        		#raise NameError ("Already defined")
 
-        else:
-            self.names[name.value] = name
-            name.reserved = True
+        except KeyError:
+            self.names[id] = value
+            #name.reserved = True
 
-    def new (self,name,value):
-        self.names[name] = value
 
     def __repr__(self):
         return json.dumps(self.names)
@@ -138,6 +138,53 @@ def new_space ():
     return space;
 
 SCOPE = Scope()
+
+
+
+#--------------------------------------------------------------------------------------------
+
+# EVAL
+
+def getVal(symbol):
+
+	print (symbol)
+
+	if symbol.first.id == "Name":
+		first = int(SCOPE.find(symbol.first.value))
+	
+	else: first = int(symbol.first.value)
+
+	if symbol.second == None:
+		second = 0
+	elif symbol.second.id == "Name":
+		second = int(SCOPE.find(symbol.first.value))
+
+	else: second = int(symbol.second.value)
+
+
+	print (first,second)
+	op = symbol.id
+	
+	operations = {
+
+	"+": first+second,
+	"-": first-second,
+	"*": first*second,
+	"/": first/second,
+	"%": first%second,
+	"**": first**second,
+	"and": first and second,
+	"or": first or second,
+	"!=": first != second,
+	"=": first == second,
+	"<": first<second,
+	">": first>second,
+	"<=": first<=second,
+	">=": first >= second,
+
+	}
+	return operations[op]
+	#print (symbol.first)
 
 
 #--------------------------------------------------------------------------------------------
@@ -216,6 +263,9 @@ def symbol(id, bp=0):
         Protoclass.__name__ = "SymClass_" + id
         symbol_table[id] = Protoclass
 
+    else:
+        Protoclass.lbp = max(bp, Protoclass.lbp)
+
     return Protoclass
 
 
@@ -262,6 +312,47 @@ def add_method(symbol_class):
 
 
 
+def prefix(id, bp):
+    """
+    Prefix expressions.
+    Arity 1.
+    Examples: +,-, not => UnaryAdd, UnaryMinus, Not
+    """
+    names = {"+":"UnaryAdd", "-":"UnarySub","not":"Not"}
+    def nud(self):
+        self.first = parse(bp)
+        self.name = names[self.id]
+        self.solve = self.first
+        self.arity = 1
+        #self.value = getVal(self)
+        return self
+    symbol(id).nud=nud
+
+
+def infix(id,bp):
+    
+    def led(self, left):
+        self.first = left
+        self.second = parse(bp)
+        self.arity = 2
+        #self.value = getVal(self)
+        return self
+    symbol(id,bp).led=led
+ 
+
+
+# special infix case: right associative
+def infix_r(id,bp):
+    def led(self, left):
+        self.first = left
+        self.second = parse(bp-1) # solves right associative
+        self.arity = 2
+        #self.value = getVal(self)
+        return self
+    symbol(id,bp).led=led
+
+
+
 # Fill Symbol Table
 # To understand bp and operator precedence:
 # See https://docs.python.org/3/reference/expressions.html | 6.16. Operator precedence
@@ -271,18 +362,20 @@ symbol("Name")
 symbol("(end)")
 
 
-# Expressions/Factor Symbols
+# OPERATORS
 
-symbol("+", 110); symbol("-", 110)
-symbol("*", 120); symbol("/", 120)
-symbol("**", 140); symbol("%",120)
-symbol("or",30);symbol("and",40)
-symbol("<<", 100); symbol(">>", 90)
+prefix("+", 130); prefix("-", 130); prefix("not", 50)
 
-# Compare
-symbol("<", 60); symbol("<=", 60)
-symbol(">", 60); symbol(">=", 60)
-symbol("!=", 60); symbol("=", 60) # "different" and "equal" symbols
+infix("+",110); infix("-",110)
+infix("*",120); infix("/",120)
+infix("%",120); infix("not", 60)
+infix("<<",100); infix(">>",90)
+infix("<",60); infix("<=",60)
+infix(">",60); infix(">=",60)
+infix("!=",60); infix("=",60) # "different" and "equal" symbols
+
+infix_r("**",140); infix_r("or",20); infix_r("and",40)
+
 
 # Constants
 symbol("global",1000)
@@ -295,15 +388,15 @@ symbol(".",150) #index
 symbol("(", 150);symbol(")");symbol(",")
 
 # Statement
-symbol("::"); symbol("->")
-symbol(":",10)
+symbol("::"); symbol("->"); infix("<-",10)
+symbol(":",10); symbol(":=",15)
 symbol("|")
 symbol("lambda",20)
-symbol("@",20)
+symbol("while",20)
 symbol("if", 20); symbol("then",15); symbol("else")
 
 symbol(")"); symbol(",")
-symbol("}");symbol("{"); symbol(",");symbol(":");symbol(";") #symbol(" ")
+symbol("}");symbol("{"); symbol(",");symbol(":");symbol(";") 
 symbol("\\n\\t"); symbol("\\n") ; symbol("\\t")
 
 symbol("Module")
@@ -317,6 +410,8 @@ symbol("Module")
 
 
 symbol("Const").nud = lambda self: self
+
+
 #symbol("Const").solve = lambda self: self.value
 
 """
@@ -337,66 +432,6 @@ def nud (self):
 symbol("Name").nud = lambda self: self # !!!
 
 
-# OPERATORS
-
-def prefix(id, bp):
-    """
-    Prefix expressions.
-    Arity 1.
-    Examples: +,-, not => UnaryAdd, UnaryMinus, Not
-    """
-    names = {"+":"UnaryAdd", "-":"UnarySub","not":"Not"}
-    
-    @add_method(symbol(id))
-    def nud(self):
-        self.first = parse(bp)
-        self.name = names[self.id]
-        self.solve = self.first
-        self.arity = 1
-        return self
-
-prefix("+", 130); prefix("-", 130); prefix("not", 50)
-
-
-def infix(id):
-    @add_method(symbol(id))
-    def led(self, left):
-        self.first = left
-        self.second = parse(self.lbp)
-        #self.solve = 0;
-        self.arity = 2
-        return self
-
-
-infix("+"); infix("-")
-infix("*"); infix("/")
-infix("%");
-infix("<<"); infix(">>")
-infix("<"); infix("<=")
-infix(">"); infix(">=")
-infix("!="); infix("=") 
-
-
-# special infix case: right associative
-def infix_r(id):
-    @add_method(symbol(id))
-    def led(self, left):
-        self.first = left
-        self.second = parse(self.lbp-1) # solves right associative
-        self.arity = 2
-        return self
-
-infix_r("**"); infix_r("or"); infix_r("and")
-
-
-def assigment (self,left):
-    self.first = left;
-    self.second = parse(self.lbp-1)
-    self.arity = 2
-    return self
-symbol(":").led = assigment
-
-
 #--------------------------------------------------------------------------------------------
 
 def constant(id,value):
@@ -404,7 +439,7 @@ def constant(id,value):
     def nud(self):
         self.id = self.name = "Const"
         self.value = value
-        SCOPE.new(id,value)
+        SCOPE.reserve(id,value)
         return self
 
 constant("null",None)
@@ -413,31 +448,32 @@ constant("False",0)
 constant("pi", 3.141592653589793)
 
 
+
 # global Name -> accessible from any SCOPE
 @add_method(symbol("global"))
 def nud (self):
     self.first = token # var
-    advance()
-    """
     advance("Name")
-    self.second = token # value
-    advance ("Const")
-    constant(self.first.value,self.second)
-    """
+    constant(self.first.value,None)
     return self
 
 
-# <Name> :: <statement> -> changeless and accessible from any SCOPE
-# sample: a :: 5 -> constant a 
-# sample: a :: { elem1: int, elem2: Dub, elem3:string}  -> structure a 
-
-@add_method(symbol("::"))
-def led (self,left):
-    print (left)
-    self.first = left
-    self.second = parse(10)
+def assigment (self,left):
+    self.first = left;
+    self.second = parse(self.lbp-1)
+    self.arity = 2
+    self.value = self.second.value
+    SCOPE.reserve(self.first.value,None)
+    #print (SCOPE)
     return self
 
+symbol(":").led = assigment
+symbol(":=").led = assigment
+
+
+# a <- { elem1: int, elem2: Dub, elem3:string}  => is structure a 
+# a <- []  => a is array
+# a: {..} => a is dic 
 
 #--------------------------------------------------------------------------------------------
 # LISTS
@@ -448,14 +484,14 @@ def nud(self):
     self.first = []
     if token.id != "]":
         while 1:
-            ignore("\\n") # !! cuanto permito??
-            ignore("\\n\\t")
-            ignore("\\t")
+            ignore(NEWLINE);ignore(INDENT);ignore(TAB)
             #assert token.id == "Const"
             #self.first.append(token)
             #advance()
             #if token.id == "]":break
             self.first.append(parse()) # check parse is an expression
+
+            ignore(NEWLINE);ignore(INDENT);ignore(TAB)
             if token.id != ",": break
             advance(",")
 
@@ -463,6 +499,7 @@ def nud(self):
     self.arity = 1
     self.name = "List"
     return self
+
 
 #--------------------------------------------------------------------------------------------
 # TUPLES
@@ -485,8 +522,9 @@ def nud(self):
     if len(self.first) > 1:
         self.name = "Tuple"
         return self # tuple
+
     elif len(self.first) == 1:
-        return self.first[0] # expr
+    	return self.first[0] # expr
     else:
         raise SyntaxError ("Bad Tuple")
 
@@ -550,7 +588,16 @@ empty:
 
 """
 
-def statement (end_stmt,end_block):
+TAB = "\\t"
+INDENT = "\\n\\t"
+NEWLINE = "\\n"
+SEMICOLON = ";"
+end_stmt = [INDENT,"(end)",NEWLINE]
+
+symbol("if").arity = "statement"
+
+
+def statement (end_block):
 
     """Parsea un statement hasta llegar a <end_stmt> o <end_block>
     """
@@ -558,6 +605,7 @@ def statement (end_stmt,end_block):
     if (token.arity == "statement"):
         advance()
         # ojo al scope
+        print ("holaaaaa",token)
         return token.nud()
 
     expr = parse()
@@ -572,7 +620,7 @@ def statement (end_stmt,end_block):
 		
 
 
-def statement_list (end_block=["\\n","(end)"], end_line= ["\\n\\t","(end)","\\n"]):
+def statement_list (end_block=[NEWLINE,"(end)"]):
     
     """Parsea statements hasta llegar a <end_block>.
         Return:
@@ -587,20 +635,25 @@ def statement_list (end_block=["\\n","(end)"], end_line= ["\\n\\t","(end)","\\n"
 
         if token.id in end_block :
             break
-        s = statement(end_line,end_block) # un solo statement
+        if token.id == TAB:
+        	advance()
+
+        ignore(INDENT)
+        s = statement(end_block) # un solo statement
         if s:
             stmt.append(s)
+        ignore(INDENT)
 
     if len(stmt) == 0: return None
     elif len(stmt) == 1: return [stmt[0]] # s
     else: return stmt
 
 
+
 def block (key=None):
     t = token
     advance(key)
-    ignore("\\n")
-    ignore("\\n\\t")
+    ignore(NEWLINE); ignore(INDENT)
     return t.nud()
 
 
@@ -642,7 +695,7 @@ def led(self,left):
         #print (self.first)
         self.third = None   
         self.arity = "2"
-        self.name = "FunCall"
+        self.name = "CallFunc"
         self.id = self.name
         return self
 
@@ -655,7 +708,7 @@ def led(self,left):
     except:
         self.third = None   
         self.arity = "2"
-        self.name = "FunCall"
+        self.name = "CallFunc"
         self.id = self.name
         return self
     #t = token
@@ -683,9 +736,9 @@ def led(self,left):
 # WHILE statement
 
 
-@add_method(symbol("@"))
+@add_method(symbol("while"))
 def nud (self):
-    self.first = parse()
+    self.first = parse(20)
     self.second = block("::")
     self.arity = "statement"
     self.name = "While_stmt"
@@ -697,7 +750,7 @@ def nud (self):
 
 @add_method(symbol("then"))
 def nud (self):
-    a = statement_list(["(end)","else","\\n"])
+    a = statement_list(["(end)","else",NEWLINE])
     return a
 
 @add_method(symbol("else"))
@@ -708,13 +761,17 @@ def nud (self):
 @add_method(symbol("if"))
 def nud(self):
     self.first = parse(20)
-    #ignore("\\n"); ignore("\\n\t")
+    ignore(NEWLINE); ignore(INDENT)
     self.second = block("then")
 
     if token.id == "else":
         self.third = block("else")
-    elif token.id == "\\n":
-        pass
+    elif token.id == NEWLINE:
+    	try:
+    		advance()
+    		self.third = block("else")
+    	except:
+    		pass
     else:
         pass
     
@@ -728,13 +785,13 @@ def nud(self):
 def module ():
     program = []
 
-    ignore ("\\n")
+    ignore (NEWLINE)
     if token.id != "(end)":
         while 1:
             if token.id == "(end)": break
             program.append(parse())
-            if token.id != "\\n": break
-            ignore ("\\n")
+            if token.id != NEWLINE: break
+            ignore (NEWLINE)
 
     advance("(end)")
     return program
@@ -872,8 +929,8 @@ if "--in" in sys.argv:
     
 
 if "--benchmark" in sys.argv:
-    factor = 5
-    program = '+1+1+1'*3
+    factor = 1
+    program = '1+1+1+1+1+1+1+1+1'*10000
 
     measure = []
 
