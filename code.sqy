@@ -1,39 +1,17 @@
 
-global u 5
-global v 5
+# CODE EXAMPLE IN SQUANCHY#
+# ------------------------------------------------#
 
 
-suma (a,b) -> (c,d) ::
-	c:a+b
-	a:a+15
-	b:5
-
-suma (a,b) -> a+b
-suma (a,b) -> c
-suma (4,5) -> 9
+# prueba de comentario
+multilnea#
 
 
-if a<=50 then 
-	d : "hola"
-	else d: "adios"
-
-if a<=50 then d : "hola" else d: "adios"
-
-if a<=50 then d : "hola"
-	else d: "adios"
-
-while a<56 ::
-	a:a+1
-	b:True
-
-
-lista : [1 2 3 4 5 "string"]
-
-list2 : [12 45463 1.56 "hola"
-		45 35 57]
+# OPERATORS #
 
 a+b*c**2-(-1/2)
 
+x:5+6
 x:y:z:8
 
 not a or b and c
@@ -45,3 +23,120 @@ tuple : (a,b,c)
 True and False
 
 (a<<2)+1
+
+
+# LISTS #
+
+numbers : [1,2,3,4]
+truths  : [True,False,False]
+strings : ["here","are","some","strings"]
+
+list : [1,2,3,4,5,"hello"]
+mylist : [12,45463,1.56,"hello",
+			45,35,57]
+
+list_of_list : [1,2,3,[1,2,3]]
+
+
+multiline_list : [
+	a,b,c,
+	d,e,f,
+	1,2,3,
+	"hi!",5.76,True
+]
+
+
+# TUPLES #
+
+my_Tuple: ("Hello world", False)
+my_tuple : (1,"hello",5.6)
+((2,3), True)
+((2,3), [2,3])
+[(1,2), (3,4), (5,6)]
+
+
+mylist.1
+my_tuple.3
+
+
+# GLOBAL #
+
+global u
+global v
+
+
+# CONSTANTS #
+
+a := 5
+b := True
+c := "constant"
+
+
+# LAMBDA #
+
+add : lambda a b :: a+b
+lambda r :: r**2*pi
+
+
+# FUNCTIONS #
+
+foo () -> True
+suma (a,b) -> a+b
+foo (a,b) -> "function"
+suma (4,5) -> 9
+
+resta (a,b) -> (c,d) :: c:a-b
+	d:(a-b)**2
+
+suma (a,b) -> (c,d) ::
+	c:a+b
+	a:a+15
+	b:5
+
+
+# IF-THE-ELSE #
+
+if b<5 and c>10 then d:45
+
+if a<=50 then d : "hi!" else d: "bye"
+
+if a<=50
+	then d : "hi!"
+	else d: "bye"
+
+if a<=50
+then d : "hi!" 
+else d: "bye"
+
+
+if a<=50
+	then
+		a:a+1
+		b:b+1
+		print(a+b)
+	else if a>10 then print ("hi!")
+	else print ("bye")
+
+
+# WHILE #
+
+while a<56 ::
+	a:a+1
+	b:True
+
+while a<100 ::
+	if a > 50 then print ("hola") else suma(a,1)
+	lambda a :: a+1
+	function (a,b)-> (c,d) :: 
+		c:a+b
+		d:a-b
+
+
+a:0
+while a<len(lista)::
+	lista.a : a
+	a:a+1
+
+
+
+
