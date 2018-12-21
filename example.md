@@ -3,6 +3,7 @@
 
 
 ```
+
 # CODE EXAMPLE IN SQUANCHY#
 # ------------------------------------------------#
 
@@ -15,6 +16,7 @@ multilnea#
 
 a+b*c**2-(-1/2)
 
+x:5+6
 x:y:z:8
 
 not a or b and c
@@ -117,22 +119,29 @@ if a<=50
 		a:a+1
 		b:b+1
 		print(a+b)
-	else
-		print ("hi!")
+	else if a>10 then print ("hi!")
+	else print ("bye")
 
 
 # WHILE #
 
-@ a<56 ::
+while a<56 ::
 	a:a+1
 	b:True
 
-@ a<100 ::
+while a<100 ::
 	if a > 50 then print ("hola") else suma(a,1)
 	lambda a :: a+1
 	function (a,b)-> (c,d) :: 
 		c:a+b
 		d:a-b
+
+
+a:0
+while a<len(lista)::
+	lista.a : a
+	a:a+1
+
 ```
 
 
@@ -142,6 +151,7 @@ if a<=50
 
  Module [ 
 	Sub(Add(Name (a),Mul(Name (b),Power(Name (c),Const (2)))),Div(UnarySub(Const (1)),Const (2)))
+	Assign(Name (x),Add(Const (5),Const (6)))
 	Assign(Name (x),Assign(Name (y),Assign(Name (z),Const (8))))
 	Or(Not(Name (a)),And(Name (b),Name (c)))
 	Const (3.141592653589793)
@@ -179,11 +189,20 @@ if a<=50
 	IfExp(<=(Name (a),Const (50)),[Assign(Name (d),Const ("hi!"))],[Assign(Name (d),Const ("bye"))])
 	IfExp(<=(Name (a),Const (50)),[Assign(Name (d),Const ("hi!"))],[Assign(Name (d),Const ("bye"))])
 	IfExp(<=(Name (a),Const (50)),[Assign(Name (d),Const ("hi!"))],[Assign(Name (d),Const ("bye"))])
-	IfExp(<=(Name (a),Const (50)),[Assign(Name (a),Add(Name (a),Const (1))), Assign(Name (b),Add(Name (b),Const (1))), CallFunc(Name (print),[[Add(Name (a),Name (b))]])],[CallFunc(Name (print),[[Const ("hi!")]])])
+	IfExp(<=(Name (a),Const (50)),[Assign(Name (a),Add(Name (a),Const (1))), Assign(Name (b),Add(Name (b),Const (1))), CallFunc(Name (print),[[Add(Name (a),Name (b))]])],[IfExp(>(Name (a),Const (10)),[CallFunc(Name (print),[[Const ("hi!")]])],[CallFunc(Name (print),[[Const ("bye")]])])])
 	While_stmt(<(Name (a),Const (56)),[Assign(Name (a),Add(Name (a),Const (1))), Assign(Name (b),Const (1))])
 	While_stmt(<(Name (a),Const (100)),[IfExp(>(Name (a),Const (50)),[CallFunc(Name (print),[[Const ("hola")]])],[CallFunc(Name (suma),[[Name (a), Const (1)]]), Lambda([Name (a)],Add(Name (a),Const (1))), Function(Name (function),[[Name (a), Name (b)], [Tuple([Name (c), Name (d)])]],[Assign(Name (c),Add(Name (a),Name (b))), Assign(Name (d),Sub(Name (a),Name (b)))])])])
+	Assign(Name (a),Const (0))
+	While_stmt(<(Name (a),CallFunc(Name (len),[[Name (lista)]])),[Assign(Access(Name (lista),Name (a)),Name (a)), Assign(Name (a),Add(Name (a),Const (1)))])
 ]
 
 
 ```
 
+Para comparar la salida de nuestro parser con el módulo de Python basta con ejecutar el siguiente código:
+
+```
+import compiler
+compiler.parseFile(code,"eval")
+
+```
