@@ -1,0 +1,34 @@
+# CODE GENERATION EXAMPLE IN SQUANCHY#
+# ------------------------------------------------#
+
+print (1, " hola mundo en Squanchy")
+
+425+5266
+
+2636-5263+5
+
++1*53-4262
+
+a:5
+b:c:d:10
+
+print ("a = ",a," b = ",b," c= ",c," d= ",d)
+
+print(a+b-c*d)
+print ("b+c = c+d ",b+c = c+d)
+print ("a+b < c+d ",a+b < c+d)
+print ("a+b > c+d ",a+b > c+d)
+
+print (400/5+20-15/3)
+print (253 and 253)
+print (10 or 16)
+
+# some functions #
+
+suma (a,b) -> a+b
+
+resta (a,b) -> a-b
+
+operation (a,b,c) -> a-b*c
+
+
