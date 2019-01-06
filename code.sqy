@@ -1,4 +1,3 @@
-
 # CODE EXAMPLE IN SQUANCHY#
 # ------------------------------------------------#
 
@@ -58,7 +57,6 @@ my_tuple : (1,"hello",5.6)
 mylist.1
 my_tuple.3
 
-
 # GLOBAL #
 
 global u
@@ -94,30 +92,6 @@ suma (a,b) -> (c,d) ::
 	b:5
 
 
-# IF-THE-ELSE #
-
-if b<5 and c>10 then d:45
-
-if a<=50 then d : "hi!" else d: "bye"
-
-if a<=50
-	then d : "hi!"
-	else d: "bye"
-
-if a<=50
-then d : "hi!" 
-else d: "bye"
-
-
-if a<=50
-	then
-		a:a+1
-		b:b+1
-		print(a+b)
-	else if a>10 then print ("hi!")
-	else print ("bye")
-
-
 # WHILE #
 
 while a<56 ::
@@ -131,7 +105,6 @@ while a<100 ::
 		c:a+b
 		d:a-b
 
-
 a:0
 while a<len(lista)::
 	lista.a : a
@@ -139,4 +112,56 @@ while a<len(lista)::
 
 
 
+# IF-THE-ELSE #
 
+if a then b else c
+
+if a
+then b;c
+	d
+else if a1 
+then b2
+else c2
+
+if a<=50
+	then d : "hi!"
+	else d: "bye"
+
+if a<=50
+then d : "hi!" 
+else d: "bye"
+
+
+# ------------------------------------------------#
+
+while a ::
+	while b ::
+		while c ::
+			while d ::
+				while e ::
+					while f ::
+						while g ::
+							pass
+
+
+
+fib (a) -> b ::
+	if a<2 then 
+		b:1 
+	else b: fib(a-1)+ fib(a-2)
+
+
+# QUICKSORT ALGORTIHM #
+
+quicksort (lista) -> sort_list ::
+	less : []
+	eq : []
+	big : []
+	if len(lista)>1 then
+		pivot: lista.0
+		while (i<len(lista)) ::
+			if lista.i < pivot then add(less,lista.i)
+			if lista.i = pivot then add(eq,lista.i)
+			if lista.i > pivot then add(big,lista.i)
+		sort_list : quicksort(less) + eq + quicksort(big)
+	else sort_list : lista
