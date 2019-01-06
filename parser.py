@@ -24,6 +24,7 @@ import time
 import visualiser as visu
 from statistics import mean 
 import os
+from myeval import Eval
 
 
 # symbol: constans, operators, ids, keywords
@@ -37,7 +38,8 @@ names_map = {"+":"Add","-":"Sub","*":"Mul","/":"Div",
         "**":"Power","%":"Mod","and":"And","or":"Or",
         "&":"Bitand","^":"Bitxor",
         "<<":"LeftShift",">>":"RightSift","lambda":"Lambda",
-        "if":"IfExp","[":"List",":":"Assign",".":"Access",":=":"Let","<-":"Data"}
+        "if":"IfExp","[":"List",":":"Assign",".":"Access",":=":"Let","<-":"Data",
+        "\\t":"TAB","\\n\\t":"INDENT","\\n":"NEWLINE"}
 
 
 
@@ -140,54 +142,8 @@ def new_space ():
 SCOPE = Scope()
 
 
-
 #--------------------------------------------------------------------------------------------
 
-# EVAL
-
-def getVal(symbol):
-
-	print (symbol)
-
-	if symbol.first.id == "Name":
-		first = int(SCOPE.find(symbol.first.value))
-	
-	else: first = int(symbol.first.value)
-
-	if symbol.second == None:
-		second = 0
-	elif symbol.second.id == "Name":
-		second = int(SCOPE.find(symbol.first.value))
-
-	else: second = int(symbol.second.value)
-
-
-	print (first,second)
-	op = symbol.id
-	
-	operations = {
-
-	"+": first+second,
-	"-": first-second,
-	"*": first*second,
-	"/": first/second,
-	"%": first%second,
-	"**": first**second,
-	"and": first and second,
-	"or": first or second,
-	"!=": first != second,
-	"=": first == second,
-	"<": first<second,
-	">": first>second,
-	"<=": first<=second,
-	">=": first >= second,
-
-	}
-	return operations[op]
-	#print (symbol.first)
-
-
-#--------------------------------------------------------------------------------------------
 
 def symbol(id, bp=0):
 
@@ -234,8 +190,9 @@ def symbol(id, bp=0):
                 """Default nud method.
                 Check prefix
                 """
-                print ("si sale esto, es malo",token)
-                raise SyntaxError("Syntax error (%r)." % self.id)
+                print ("problema, NUD no definido ", self.id)
+                if self.name == "INDENT":
+                    raise IndentationError ('Incorrect use of TABS.')
 
 
             def led (self,left):
@@ -243,7 +200,7 @@ def symbol(id, bp=0):
                 """Default led method.
                 Check infix and infix_r.
                 """
-                print ("si sale esto, es malo",token)
+                print ("problema, LED no definido ", self.id)
                 raise SyntaxError("Syntax error (%r)." % self.id)
 
 
@@ -292,7 +249,7 @@ def advance (id=None):
 
 def ignore (id=None):
 
-    """advance MOD. Ignores token <id>, advance until sees token different than <id>
+    """ MOD of advance function. Ignores token <id>, advance until sees token different than <id>
     """
 
     global token
@@ -313,18 +270,19 @@ def add_method(symbol_class):
 
 
 def prefix(id, bp):
+
     """
     Prefix expressions.
     Arity 1.
     Examples: +,-, not => UnaryAdd, UnaryMinus, Not
     """
+
     names = {"+":"UnaryAdd", "-":"UnarySub","not":"Not"}
     def nud(self):
         self.first = parse(bp)
         self.name = names[self.id]
         self.solve = self.first
         self.arity = 1
-        #self.value = getVal(self)
         return self
     symbol(id).nud=nud
 
@@ -335,7 +293,6 @@ def infix(id,bp):
         self.first = left
         self.second = parse(bp)
         self.arity = 2
-        #self.value = getVal(self)
         return self
     symbol(id,bp).led=led
  
@@ -347,7 +304,6 @@ def infix_r(id,bp):
         self.first = left
         self.second = parse(bp-1) # solves right associative
         self.arity = 2
-        #self.value = getVal(self)
         return self
     symbol(id,bp).led=led
 
@@ -459,11 +415,16 @@ def nud (self):
 
 
 def assigment (self,left):
+    #print ("Estoy en assigment")
     self.first = left;
     self.second = parse(self.lbp-1)
     self.arity = 2
-    self.value = self.second.value
-    SCOPE.reserve(self.first.value,None)
+    try:
+        SCOPE.reserve(self.first.value,Eval(self.second,SCOPE))
+    except:
+        SCOPE.reserve(self.first.value,"test-mode")
+    #SCOPE.reserve(self.first.value,"test-mode")
+    #print ("son:",self.first.value,Eval(self.second))
     #print (SCOPE)
     return self
 
@@ -592,9 +553,7 @@ TAB = "\\t"
 INDENT = "\\n\\t"
 NEWLINE = "\\n"
 SEMICOLON = ";"
-end_stmt = [INDENT,"(end)",NEWLINE]
-
-symbol("if").arity = "statement"
+end_stmt = [INDENT,"(end)",SEMICOLON]
 
 
 def statement (end_block):
@@ -602,21 +561,21 @@ def statement (end_block):
     """Parsea un statement hasta llegar a <end_stmt> o <end_block>
     """
 
-    if (token.arity == "statement"):
+
+    if (token.id in ["while","if","else","then"]):
+        t = token
         advance()
-        # ojo al scope
-        print ("holaaaaa",token)
-        return token.nud()
+        return t.nud()
 
-    expr = parse()
+    statement = parse()
 
-
-    if token.id in end_block: pass
+    if token.id in end_block:
+        pass
     elif token.id in end_stmt: advance(token.id)
     else:
         raise SyntaxError ("Expected %r" % end_stmt)
 
-    return expr
+    return statement
 		
 
 
@@ -635,10 +594,17 @@ def statement_list (end_block=[NEWLINE,"(end)"]):
 
         if token.id in end_block :
             break
-        if token.id == TAB:
-        	advance()
-
         ignore(INDENT)
+        ignore(TAB)
+
+        """
+        for k in range (1,level):
+            try:
+                advance(TAB)
+            except:
+                raise IndentationError('Expected TAB but found "%s" '% token)
+        """
+
         s = statement(end_block) # un solo statement
         if s:
             stmt.append(s)
@@ -649,11 +615,10 @@ def statement_list (end_block=[NEWLINE,"(end)"]):
     else: return stmt
 
 
-
 def block (key=None):
     t = token
     advance(key)
-    ignore(NEWLINE); ignore(INDENT)
+    ignore(INDENT) 
     return t.nud()
 
 
@@ -668,7 +633,7 @@ def nud (self):
 
 """
 FUNCTION_SKELETON =
-    {name} {args} -> {return} ::{body}
+    {name} {args} -> {return} :: {body}
 """
 
 
@@ -690,6 +655,14 @@ def led(self,left):
     advance(")")
     self.second.append(arg)
 
+    # sería en el scope de la función no en el general
+
+    """
+    for i in arg:
+        name = self.first.value+"_"+i.value
+        SCOPE.reserve(name,"undefined")
+    """
+
     if self.first.value in SCOPE.names:
         #funcall
         #print (self.first)
@@ -702,7 +675,7 @@ def led(self,left):
 
     #SCOPE.new (left.value,left.value)
     #print (SCOPE)
-
+    
     try:
         advance ("->")
     except:
@@ -735,46 +708,56 @@ def led(self,left):
 #--------------------------------------------------------------------------------------------
 # WHILE statement
 
+symbol("while").arity = "statement"
+symbol("while").name = "While_stmt"
 
 @add_method(symbol("while"))
 def nud (self):
+
     self.first = parse(20)
     self.second = block("::")
-    self.arity = "statement"
-    self.name = "While_stmt"
-    return self
 
+    if self.second == None:
+        raise WhileError ('While Statement Error. No statement found after ::')
+
+    return self
 
 #--------------------------------------------------------------------------------------------
 # IF-THEN-ELSE statement
 
+symbol("if").arity = "statement"
+
 @add_method(symbol("then"))
 def nud (self):
-    a = statement_list(["(end)","else",NEWLINE])
-    return a
+    stm = statement_list(["(end)","else",NEWLINE])
+    return stm
+
 
 @add_method(symbol("else"))
 def nud (self):
     a = statement_list()
     return a
 
+
 @add_method(symbol("if"))
 def nud(self):
     self.first = parse(20)
     ignore(NEWLINE); ignore(INDENT)
-    self.second = block("then")
 
+    try :
+        self.second = block("then")
+    except:
+        raise IfError ('Expected "then" but found "%s" '% token)
+
+    if self.second == None :
+        raise IfError ('IF-THEN Statement Error. No Statement found after "then"')
+
+    ignore(NEWLINE)
     if token.id == "else":
         self.third = block("else")
-    elif token.id == NEWLINE:
-    	try:
-    		advance()
-    		self.third = block("else")
-    	except:
-    		pass
-    else:
-        pass
-    
+        if self.third == None :
+            raise IfError('IF-THEN-ELSE Statement Error. No Statement found after "else"')
+
     self.arity = "statement"
     return self
 
@@ -788,10 +771,12 @@ def module ():
     ignore (NEWLINE)
     if token.id != "(end)":
         while 1:
-            if token.id == "(end)": break
-            program.append(parse())
-            if token.id != NEWLINE: break
             ignore (NEWLINE)
+            #ignore (INDENT)
+            ignore (SEMICOLON)
+            if token.id == "(end)": break
+            if token.id == NEWLINE: ignore(NEWLINE)
+            program.append(parse())
 
     advance("(end)")
     return program
@@ -807,7 +792,7 @@ def nud (self):
 def __repr__ (self):
     out = self.first
     out = map(str, out)
-    return "Module [ \n\t"+ "\n\t".join(out) +"\n]"
+    return "Module [ \n\n\t"+ "\n\n\t".join(out) +"\n]"
 
 
 
@@ -877,17 +862,51 @@ def ast(program):
     """Creates AST using Pratt's Parser
     """
 
-    global token,next 
+    global token,next,level
 
     next = tokenize(program).__next__ 
     token = next()
+    level = 0
     tree = parse()
-    return tree
+    return tree,SCOPE
  
 
+#--------------------------------------------------------------------------------------------
+# ERRORS
+
+class WhileError(Exception):
+    pass
+
+class IfError(Exception):
+    pass
+
+class IndentationError(Exception):
+    pass
 
 #--------------------------------------------------------------------------------------------
 # OPTIONS
+
+
+def console ():
+
+    """Interactive console for testing. Must change lexer's code, see debugging comments.
+    -- commands:
+        exit
+        clear
+    """
+
+    try:
+        while True:
+            expr = input (">> ")
+            if expr == "exit": exit()
+            if expr == "clear": 
+                os.system('clear')
+                console()
+            print (ast(expr)[0].first[0])
+
+    except Exception as e:
+        print (e.args[0])
+        console()
 
 
 if "--terminal" in sys.argv:
@@ -897,10 +916,7 @@ if "--terminal" in sys.argv:
 
     print ("Squanchy PL console test")
     print ("v1.1","\n")
-    while True:
-        expr = input (">> ")
-        if expr == "exit": exit()
-        print (ast(expr))
+    console()
 
 
 if "--img" in sys.argv:
@@ -908,7 +924,7 @@ if "--img" in sys.argv:
     """Test tree visualisation.
     """
     program = input (">> ")
-    tree = ast(program)
+    tree,scope = ast(program)
     print (program, "-> ",tree,"\n")
     visu.visualise(tree)
 
@@ -924,8 +940,9 @@ if "--in" in sys.argv:
 
     program = program.replace("\n","\\n").replace("\t","\\t")
 
-    tree = ast(program)
+    tree,scope = ast(program)
     print ("\n",tree)
+    print ("\n",scope)
     
 
 if "--benchmark" in sys.argv:
@@ -947,11 +964,21 @@ if "--benchmark" in sys.argv:
 
 
 
-
 def main():
 	pass
 
 
 if __name__ == "__main__":
 	main()
+
+
+
+
+
+
+
+
+
+
+
 
