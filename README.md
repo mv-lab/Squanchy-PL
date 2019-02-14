@@ -1,5 +1,15 @@
+[![Awesome](https://cdn.rawgit.com/sindresorhus/awesome/d7305f38d29fed78fa85652e3a63e154dd8e8829/media/badge.svg)](https://github.com/sindresorhus/awesome)
+[![Open Source Love](https://badges.frapsoft.com/os/v1/open-source.svg?v=102)](https://github.com/Jesucrist0/Squanchy-PL)
+[![contributions welcome](https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat)](https://github.com/Jesucrist0/Squanchy-PL/issues)
+[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
+![version](https://img.shields.io/badge/version-1.0.0-blue.svg?maxAge=2592000)
+[![Maintenance](https://img.shields.io/badge/Maintained%3F-yes-green.svg)](https://github.com/Jesucrist0/Squanchy-PL)
+[![code](https://img.shields.io/badge/codestyle-clean-blueviolet.svg)](https://www.amazon.es/Clean-Code-Handbook-Software-Craftsmanship/dp/0132350882/ref=pd_lpo_sbs_14_t_0?_encoding=UTF8&psc=1&refRID=HYBK4ZCEKQREQCC461CC)
+
+
 # Squanchy Programming Language
 **_Bastard son of Python and Haskell, and failed Scratch_**
+
 
 <img src="https://user-images.githubusercontent.com/37480508/49680121-89914100-fa91-11e8-9aa7-3956d855173f.png" width="15%"></img>
 
@@ -7,16 +17,33 @@
 ## About
 Squanchy is a brand new, easy to learn, general purpose, multi-paradigm, high performance programming language created by:
 
-* **Marcos V. Conde Osorio**  [marcond](marcosventura.conde@alumnos.uva.es)
-* **Gabriel Rodríguez Canal**  [gabrielrodcanal](gabriel.rodriguez.canal@alumnos.uva.es)
+* **Marcos V. Conde Osorio**  [Jesucrist0](https://github.com/Jesucrist0)                     
 
 Work on the language began on September, 2018.
-The language is written from scratch (it includes an integrated lexer, parser and interpreter, etc.).
+The language is written from scratch (it includes an integrated lexer, parser, code generator etc).
+
+  **Why?** 
+
+- Python is lit, that's all, arguably one of the best programming languages ever.
+- Now you see how concise, clean, and perfect is  Haskell code:
+
+<img src="https://images.huffingtonpost.com/2013-11-08-arronctonrcode118.jpg" width="70%"></img>
+
+So I tried to put together Python and Haskell (or at least the main features from both) in Squanchy. 
+
+#### Contact      [![Ask Me Anything !](https://img.shields.io/badge/Ask%20me-anything-1abc9c.svg)](mailto:marcosventura.conde@alumnos.uva.es)
 
 #### This project is licensed under the GNU General Public License v3.0 - see the [LICENSE.md](LICENSE.md) file for details
 #### Built With
 
-* [Python3.0](https://www.python.org/download/releases/3.0/) 
+[![forthebadge made-with-python](http://ForTheBadge.com/images/badges/made-with-python.svg)](https://www.python.org/download/releases/3.0/) 
+
+
+**[LLVM](https://llvm.org/)**
+
+<img src="https://llvm.org/img/LLVM-Logo-Derivative-5.png" width="10%"></img>
+
+
 
 ---
 
@@ -38,7 +65,7 @@ fib x = fib (x - 1) + fib (x - 2)
 ```
 Squanchy:
 
-```
+```haskell
 fib (x) -> y ::
   if x<2 then y:1 else y: fib(x-1)+fib(x-2)
   
@@ -69,12 +96,55 @@ The following features are coming soon:
 * Flow control (ternary ?, for)
 * Data structs
 * Dictionaries
-* array
+* array (like numpy)
+* more default functions
+* fixed visualisation module
 * ...
 
 
 ### Contributing
-**Not yet.**
+
+```prolog
+This is an open source project.
+```
+![contributors](https://img.shields.io/badge/contributors-1-green.svg)
+
+Without your help, this would not have been possible
+
+* Gabriel Rodríguez Canal [@gabrielrodcanal](https://github.com/gabrielrodcanal)
+
+You want to contribute?
+Please do! The source code is hosted at GitHub. If you want something, open an issue or a pull request.
+If you need want to contribute but don't know where to start, take a look at:
+
+- [Step by step guide to make your first contribution](https://codeburst.io/a-step-by-step-guide-to-making-your-first-github-contribution-5302260a2940)
+- [Github guideline for repository contributors](https://help.github.com/articles/setting-guidelines-for-repository-contributors/)
+
+This is the main [documentation](documentation.pdf) of the project, only Spanish version (for the moment). Also
+you can checkout down below all my sources in Bibliography
+
+
+**Contributing Code**
+
+1. Fork it!
+2. Create your feature branch: `git checkout -b my-new-feature`
+3. Commit your changes: `git commit -am 'Add some feature'`
+4. Push to the branch: `git push origin my-new-feature`
+5. Submit a pull request 
+
+Check this out if you don't know how to start:
+
+
+## Aims and objectives
+
+- [x] Make it work
+- [x] Basic code generation
+- [ ] Beautiful and Clean Code + documentation !! 
+- [ ] Add data structures and arrays 
+- [ ] IDLE for Squanchy: something easy and minimalist, just write & run like Jupyter.
+- [ ] Work on the code optimization
+- [ ] Update tutorials, documentation ...
+- [ ] a ton of things more
 
 
 ---
