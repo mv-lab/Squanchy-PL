@@ -11,11 +11,11 @@
 **_Bastard son of Python and Haskell, and failed Scratch_**
 
 
-<img src="https://user-images.githubusercontent.com/37480508/49680121-89914100-fa91-11e8-9aa7-3956d855173f.png" width="15%"></img>
+<img src="https://user-images.githubusercontent.com/37480508/49680121-89914100-fa91-11e8-9aa7-3956d855173f.png" width="16%"></img>
 
 
 ## About
-Squanchy is a brand new, easy to learn, general purpose, multi-paradigm, high performance programming language created by:
+Squanchy is a brand new, easy to learn, general purpose, multi-paradigm, compiled programming language created by:
 
 * **Marcos V. Conde Osorio**  [Jesucrist0](https://github.com/Jesucrist0)                     
 
@@ -27,7 +27,7 @@ The language is written from scratch (it includes an integrated lexer, parser, c
 - Python is lit, that's all, arguably one of the best programming languages ever.
 - Now you see how concise, clean, and perfect is  Haskell code:
 
-<img src="https://images.huffingtonpost.com/2013-11-08-arronctonrcode118.jpg" width="70%"></img>
+<img src="https://images.huffingtonpost.com/2013-11-08-arronctonrcode118.jpg" width="72%"></img>
 
 So I tried to put together Python and Haskell (or at least the main features from both) in Squanchy. 
 
@@ -42,7 +42,6 @@ So I tried to put together Python and Haskell (or at least the main features fro
 **[LLVM](https://llvm.org/)**
 
 <img src="https://llvm.org/img/LLVM-Logo-Derivative-5.png" width="10%"></img>
-
 
 
 ---
@@ -123,6 +122,7 @@ If you need want to contribute but don't know where to start, take a look at:
 This is the main [documentation](documentation.pdf) of the project, only Spanish version (for the moment). Also
 you can checkout down below all my sources in Bibliography
 
+Before doing anything, see [Code of Conduct](CODE_OF_CONDUCT.md)
 
 **Contributing Code**
 
