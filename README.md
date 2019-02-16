@@ -10,7 +10,6 @@
 # Squanchy Programming Language
 **_Bastard son of Python and Haskell, and failed Scratch_**
 
-
 <img src="https://user-images.githubusercontent.com/37480508/49680121-89914100-fa91-11e8-9aa7-3956d855173f.png" width="16%"></img>
 
 
@@ -25,24 +24,38 @@ The language is written from scratch (it includes an integrated lexer, parser, c
   **Why?** 
 
 - Python is lit, that's all, arguably one of the best programming languages ever.
-- Now you see how concise, clean, and perfect is  Haskell code:
+- I wrote the same code in Haskell and Java. Now you see how concise, clean, and perfect is  Haskell code:
 
-<img src="https://images.huffingtonpost.com/2013-11-08-arronctonrcode118.jpg" width="72%"></img>
+<!-- <img src="https://images.huffingtonpost.com/2013-11-08-arronctonrcode118.jpg" width="72%"></img> -->
+    
+```java
+final int LIMIT = 50;
+int[] a = new int[LIMIT];
+int[] b = new int [LIMIT-5];
+for (int i=0; i< LIMIT; i++){
+ a[i] = (i+1)*2;
+ if (i >= 5) b(i-5)= [i];
+}
+```
+```haskell
+let a = [2,4...100]
+let b = drop 5 a
+
+```
 
 So I tried to put together Python and Haskell (or at least the main features from both) in Squanchy. 
+
 
 #### Contact      [![Ask Me Anything !](https://img.shields.io/badge/Ask%20me-anything-1abc9c.svg)](mailto:marcosventura.conde@alumnos.uva.es)
 
 #### This project is licensed under the GNU General Public License v3.0 - see the [LICENSE.md](LICENSE.md) file for details
+
 #### Built With
 
 [![forthebadge made-with-python](http://ForTheBadge.com/images/badges/made-with-python.svg)](https://www.python.org/download/releases/3.0/) 
 
-
-**[LLVM](https://llvm.org/)**
-
-<img src="https://llvm.org/img/LLVM-Logo-Derivative-5.png" width="10%"></img>
-
+<a href="https://llvm.org/"><img src="https://llvm.org/img/LLVM-Logo-Derivative-5.png" width="10%"></img>
+</a>
 
 ---
 
@@ -101,7 +114,7 @@ The following features are coming soon:
 * ...
 
 
-### Contributing
+## Contributing
 
 ```prolog
 This is an open source project.
@@ -189,4 +202,4 @@ Analyzer and Parser Generation for NextGen Languages](https://pdfs.semanticschol
 - [Compilers Algorithms](http://www.softpanorama.org/Algorithms/compilers.shtml)
 - [Compiler Design - Code Optimization](https://www.tutorialspoint.com/compiler_design/compiler_design_code_optimization.htm)
 - [Writing your own programming language and compiler with Python](https://blog.usejournal.com/writing-your-own-programming-language-and-compiler-with-python-a468970ae6df)
-
+- [68 Resources To Help You To Create Programming Languages](https://tomassetti.me/resources-create-programming-languages/)
