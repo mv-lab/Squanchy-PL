@@ -12,13 +12,26 @@
 
 <img src="https://user-images.githubusercontent.com/37480508/49680121-89914100-fa91-11e8-9aa7-3956d855173f.png" width="16%"></img>
 
+## Important
+
+- [code.sqy](code.sqy) Example of code written in Squancy. Ejemplo de código escrito en Squanchy.
+- [example.md](example.md) Parser test example, see the AST. Ejemplo para comprobar el parser y ver el AST generado.
+- [ir_code.md](ir_code.md) Comprobar la generacin de código intermedio LLVM y compilación.
+
 
 ## About
 Squanchy is a brand new, easy to learn, general purpose, multi-paradigm, compiled programming language created by:
 
 * **Marcos V. Conde Osorio**  [Jesucrist0](https://github.com/Jesucrist0)                     
 
+Student at University of Valladolid.
+Alumno de la Universidad de Valladolid.
+
 Work on the language began on September, 2018.
+
+Related to the courses: Algorithms and computing, Formal Grammars and Languages.
+Asignaturas relacionadas: Algoritmos y Computación, Gramáticas y Lenguajes formales.
+
 The language is written from scratch (it includes an integrated lexer, parser, code generator etc).
 
   **Why?** 
