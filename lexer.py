@@ -27,7 +27,7 @@ import time
 from statistics import mean 
 
 
-# REGEX
+# REGEX. Regular expressions.
 
 rules = (
     ('stmt', r'\\n\\t|\\n|\\t'),
@@ -67,6 +67,7 @@ class StrError(Exception):
 def lexer (program):
 
     """Generator. Generate instance(Token).See token_list and debugging comments.
+    Using generators.
     """
 
     module = Token("Module", "Module", -1)
