@@ -115,9 +115,6 @@ class Scope:
 
         """
 
-        #if (name.arity != "Name" or name.reserved):
-         #   return
-
         try:
         	t = self.names[id]
         	if t:
@@ -797,7 +794,7 @@ def __repr__ (self):
 
 
 #--------------------------------------------------------------------------------------------
-# LEXER
+# LEXER CALL
 
 def tokenize(program):
 
