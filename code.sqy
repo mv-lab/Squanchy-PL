@@ -15,7 +15,11 @@ x:y:z:8
 
 not a or b and c
 
+e-05
+
 pi
+
+var_1 : 56
 
 tuple : (a,b,c)
 
