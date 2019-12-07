@@ -1,9 +1,7 @@
-[![Awesome](https://cdn.rawgit.com/sindresorhus/awesome/d7305f38d29fed78fa85652e3a63e154dd8e8829/media/badge.svg)](https://github.com/sindresorhus/awesome)
-[![Open Source Love](https://badges.frapsoft.com/os/v1/open-source.svg?v=102)](https://github.com/Jesucrist0/Squanchy-PL)
 [![contributions welcome](https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat)](https://github.com/Jesucrist0/Squanchy-PL/issues)
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 ![version](https://img.shields.io/badge/version-1.0.0-blue.svg?maxAge=2592000)
-[![Maintenance](https://img.shields.io/badge/Maintained%3F-yes-green.svg)](https://github.com/Jesucrist0/Squanchy-PL)
+[![Maintenance](https://img.shields.io/badge/Maintained%3F-no-red.svg)](https://github.com/Jesucrist0/Squanchy-PL)
 [![code](https://img.shields.io/badge/codestyle-clean-blueviolet.svg)](https://www.amazon.es/Clean-Code-Handbook-Software-Craftsmanship/dp/0132350882/ref=pd_lpo_sbs_14_t_0?_encoding=UTF8&psc=1&refRID=HYBK4ZCEKQREQCC461CC)
 
 
@@ -22,7 +20,7 @@
 ## About
 Squanchy is a brand new, easy to learn, general purpose, multi-paradigm, compiled programming language created by:
 
-* **Marcos V. Conde Osorio**  [Jesucrist0](https://github.com/Jesucrist0)                     
+* **Marcos V**  [mv-lab](https://github.com/mv-lab)                     
 
 Student at University of Valladolid.
 Alumno de la Universidad de Valladolid.
@@ -133,8 +131,6 @@ The following features are coming soon:
 This is an open source project.
 ```
 ![contributors](https://img.shields.io/badge/contributors-1-green.svg)
-
-Without your help, this would not have been possible
 
 * Gabriel Rodríguez Canal [@gabrielrodcanal](https://github.com/gabrielrodcanal)
 
